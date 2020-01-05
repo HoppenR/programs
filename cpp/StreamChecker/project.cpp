@@ -83,7 +83,7 @@ void Curl::resetjson() {
 }
 
 MenuWindow::MenuWindow() {
-	setlocale(LC_ALL, "");
+	std::setlocale(LC_ALL, "en_US.UTF-8");
 	initscr();
 	Menu = newwin(LINES - 1, COLS, 1, 0);
 	noecho();
@@ -160,7 +160,8 @@ void MenuWindow::print_menu(const keyvalvec_t& choices, const size_t& highlight,
 		std::string safeTitle = iter->status;
 		safeTitle.erase(std::remove(safeTitle.begin(), safeTitle.end(), '\n'),
 						safeTitle.end());
-		// TODO: add live-time as an argumenet option
+		// TODO: add live-time as an argument option
+		// TODO: fix one hour behind on non-daylight savings time
 		tzset();
 		int timelive_hrs =
 			(std::stoi(iter->created_at.substr(11, 2)) - (timezone / 3600)) %
@@ -169,11 +170,16 @@ void MenuWindow::print_menu(const keyvalvec_t& choices, const size_t& highlight,
 		if (timelive_hrs < 0)
 			timelive_hrs += 24;
 		if (parseopts[OptIndex::showtitle]) {
-			mvwprintw(
-				Menu, y, 1, "%-6s%-18s%-20.19s%-*.*s live since %2.2d:%2.2d",
-				iter->viewers.c_str(), iter->name.c_str(), iter->game.c_str(),
-				(COLS - 2 - 6 - 18 - 20 - 17), (COLS - 2 - 6 - 18 - 20 - 17),
-				safeTitle.c_str(), timelive_hrs, timelive_mns);
+			mvwprintw(Menu, y, 1,
+					  "%-6s%-18s%-19.19s%s%-*.*s%slive since %2.2d:%2.2d",
+					  iter->viewers.c_str(), iter->name.c_str(),
+					  iter->game.c_str(), iter->game.size() >= 20 ? "▏" : " ",
+					  (COLS - 2 - 6 - 18 - 20 - 17),
+					  (COLS - 2 - 6 - 18 - 20 - 17), safeTitle.c_str(),
+					  safeTitle.size() > unsigned(COLS - 2 - 6 - 18 - 20 - 17)
+						  ? "▏"
+						  : " ",
+					  timelive_hrs, timelive_mns);
 		} else {
 			mvwprintw(Menu, y, 1, "%-6s%-18s%-20.19s%*s live since %2.2d:%2.2d",
 					  iter->viewers.c_str(), iter->name.c_str(),
@@ -344,9 +350,12 @@ void open_link(const keyvalvec_t& choices, const size_t& choice) {
 		throw(std::runtime_error("BROWSER is unset"));
 	}
 	syscall += browser;
-	syscall += " ";
+	syscall += ' ';
+	syscall += '\"';
 	syscall += "https://player.twitch.tv/?channel=";
 	syscall += choices[choice].name;
+	syscall += "&parent=strims.gg";
+	syscall += '\"';
 	system(syscall.c_str());
 	return;
 }

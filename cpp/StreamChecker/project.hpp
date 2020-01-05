@@ -19,7 +19,7 @@ struct StreamKeys {
 	std::string viewers;
 	std::string created_at;
 };
-typedef std::vector<StreamKeys> keyvalvec_t;
+using keyvalvec_t = std::vector<StreamKeys>;
 
 struct OptIndex {
 	enum Values : size_t {

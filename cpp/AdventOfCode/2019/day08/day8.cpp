@@ -6,9 +6,9 @@
 #define PART1 1
 #define PART2 1
 
-typedef std::array<size_t, 25> row_t;
-typedef std::array<row_t, 6> layer_t;
-typedef std::array<layer_t, 100> picture_t;
+using row_t = std::array<size_t, 25>;
+using layer_t = std::array<row_t, 6>;
+using picture_t = std::array<layer_t, 100>;
 
 int find_layer_least_zeroes(const picture_t& picture) {
 	int answer = 0;

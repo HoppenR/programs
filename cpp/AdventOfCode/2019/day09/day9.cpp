@@ -4,7 +4,7 @@
 #define PART2 1
 
 long run_with_input(const std::vector<long>& prgState, int input) {
-	TuringMachine BOOSTComputer(prgState, 4096);
+	IntCode BOOSTComputer(prgState, 4096);
 	BOOSTComputer.inputValues.push_back(input);
 	BOOSTComputer.run_program();
 	return BOOSTComputer.message;

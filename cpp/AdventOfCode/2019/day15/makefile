@@ -1,6 +1,7 @@
 GCCFLAGS+= -march=native
 GCCFLAGS+= -O2
 
-all:
-	g++ $(GCCFLAGS) -lncurses day*.cpp
+LDFLAGS+= -lncurses
 
+all:
+	g++ $(GCCFLAGS) $(LDFLAGS) ../common/IntCode.cpp day*.cpp

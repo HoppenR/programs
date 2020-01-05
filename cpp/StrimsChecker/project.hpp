@@ -17,7 +17,7 @@ struct StreamKeys {
 	std::string service;
 	bool hidden;
 };
-typedef std::vector<StreamKeys> keyvalvec_t;
+using keyvalvec_t = std::vector<StreamKeys>;
 
 class Curl {
 private:

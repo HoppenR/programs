@@ -7,8 +7,8 @@
 // WARNING: REALLY SLOW
 // (~40 seconds mid range gen 6 intel cpu)
 
-typedef std::tuple<int, int, int, int> squareinfo;
-typedef std::array<std::array<int, 300>, 300> gridplane;
+using squareinfo = std::tuple<int, int, int, int>;
+using gridplane = std::array<std::array<int, 300>, 300>;
 
 int get_power(int x, int y, int serial) {
 	int rackid = x + 10;

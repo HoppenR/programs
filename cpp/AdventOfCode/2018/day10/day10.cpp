@@ -10,7 +10,7 @@
 // Sadly, 10 height characters just happened to work for me, it might not for
 // other inputs
 
-typedef std::tuple<int, int, int, int> quadtuple;
+using quadtuple = std::tuple<int, int, int, int>;
 
 quadtuple get_extremes(const std::vector<quadtuple>& stars) {
 	std::vector<quadtuple>::const_iterator stariter;
