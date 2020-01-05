@@ -40,7 +40,7 @@ declare -a RepoFilesLocations=("$HOSTNAME/" ./ ./)
 declare -a ConfReposFiles=(.bashrc picom.conf i3/config
 .dir_colors dunstrc .gtkrc-2.0 .highlight.theme .i3status.conf .inputrc
 lightdm-gtk-greeter.conf personal.vim .profile rc.conf rifle.conf scope.sh
-settings.ini .vimrc termite/config .Xresources)
+settings.ini .vimrc alacritty/alacritty.yml .Xresources)
 # config-files corresponding local files
 declare -a ConfLocalFiles=(~/.bashrc ~/.config/picom.conf
 ~/.config/i3/config ~/.dir_colors ~/.config/dunst/dunstrc
@@ -48,7 +48,7 @@ declare -a ConfLocalFiles=(~/.bashrc ~/.config/picom.conf
 ~/.inputrc /etc/lightdm/lightdm-gtk-greeter.conf ~/.vim/colors/personal.vim
 ~/.profile ~/.config/ranger/rc.conf ~/.config/ranger/rifle.conf
 ~/.config/ranger/scope.sh ~/.config/gtk-3.0/settings.ini ~/.vimrc
-~/.config/termite/config ~/.Xresources)
+~/.config/alacritty/alacritty.yml ~/.Xresources)
 
 ## SYNC #n
 #declare -a MyReposFiles(File1 File2)

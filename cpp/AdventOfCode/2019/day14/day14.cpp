@@ -18,10 +18,10 @@ public:
 	}
 };
 
-typedef std::map<Chemical, std::vector<Chemical>> RecipeBook;
-typedef std::pair<Chemical, std::vector<Chemical>> RecipeEntry;
-typedef std::map<std::string, size_t> ChemAmount;
-typedef std::pair<std::string, size_t> ChemEntry;
+using RecipeBook = std::map<Chemical, std::vector<Chemical>>;
+using RecipeEntry = std::pair<Chemical, std::vector<Chemical>>;
+using ChemAmount = std::map<std::string, size_t>;
+using ChemEntry = std::pair<std::string, size_t>;
 
 RecipeBook::const_iterator find_chem(RecipeBook::const_iterator iter,
 									 RecipeBook::const_iterator end,

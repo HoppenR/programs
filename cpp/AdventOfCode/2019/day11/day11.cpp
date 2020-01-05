@@ -5,8 +5,8 @@
 #define PART1 1
 #define PART2 1
 
-typedef std::pair<short, short> pos_t;
-typedef std::map<pos_t, short> hull_t;
+using pos_t = std::pair<short, short>;
+using hull_t = std::map<pos_t, short>;
 static const std::array<pos_t, 4> movement = {
 	// Represents the changes in X, Y for
 	// 0 = North, 1 = East, 2 = South, 3 = West
@@ -23,7 +23,7 @@ static void operator+=(pos_t& lhs, const pos_t& rhs) {
 
 void paint(hull_t& hull, const std::vector<long>& prgState,
 		   short starting_tile) {
-	TuringMachine EHPR(prgState, 4096);
+	IntCode EHPR(prgState, 4096);
 	pos_t pos = { 0, 0 };
 	short direction = 0; // North
 	EHPR.inputValues.push_back(starting_tile);

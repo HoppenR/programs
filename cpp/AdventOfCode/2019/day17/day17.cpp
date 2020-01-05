@@ -4,7 +4,7 @@
 #define PART2 0
 
 size_t run(const std::vector<long>& prgState) {
-	TuringMachine IntCodeComp(prgState, 4096);
+	IntCode IntCodeComp(prgState, 4096);
 	std::vector<std::vector<char>> scaffoldView;
 	bool iterate = true;
 	while (iterate) {
@@ -35,7 +35,7 @@ size_t run(const std::vector<long>& prgState) {
 }
 
 void print_scaffold(const std::vector<long>& prgState) {
-	TuringMachine IntCodeComp(prgState, 4096);
+	IntCode IntCodeComp(prgState, 4096);
 	std::vector<std::vector<char>> scaffoldView;
 	bool iterate = true;
 	while (iterate) {

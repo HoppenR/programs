@@ -35,8 +35,8 @@ then
 	exit 3
 fi
 
-declare -a repositories=(config-files/ notes/ programs/ .vim/pack/default/start/vim-polyglot/
-.vim/pack/default/start/YouCompleteMe/ .vim/pack/default/start/nerdtree)
+declare -a repositories=(config-files/ notes/ programs/ .vim/pack/plugins/start/vim-polyglot/
+.vim/pack/plugins/start/YouCompleteMe/ .vim/pack/plugins/start/nerdtree)
 
 cd ~ || exit 8
 for D in "${repositories[@]}"

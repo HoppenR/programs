@@ -4,11 +4,11 @@
 #define PART2 1
 
 int run_with_input(std::vector<long> prgState, int input) {
-	TuringMachine IntCodeComp(prgState);
-	IntCodeComp.inputValues.push_back(input);
-	while (IntCodeComp.message == 0)
-		IntCodeComp.run_program();
-	return IntCodeComp.message;
+	IntCode Computer(prgState);
+	Computer.inputValues.push_back(input);
+	while (Computer.message == 0)
+		Computer.run_program();
+	return Computer.message;
 }
 
 int main(void) {

@@ -1,0 +1,195 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"time"
+
+	sc "github.com/HoppenR/streamchecker"
+)
+
+const (
+	ConfigFile  = "config.json"
+	CacheFolder = "streamshower"
+)
+
+// TODO(ss): '/': Search instead of filter.
+// TODO(sc): Save follows data between requests.
+// TODO(sc): Separate twitch streams and strims streams in getting?
+
+func main() {
+	background := flag.Bool(
+		"b",
+		false,
+		"Check for streams in the background and serve data over local network",
+	)
+	embed := flag.String (
+		"e",
+		"",
+		"get the embed string",
+	)
+	port := flag.String(
+		"p",
+		":8181",
+		"Port to transfer the data from the daemon. Unset to disable",
+	)
+	refreshTime := flag.Duration(
+		"r",
+		5*time.Minute,
+		"How often the daemon refreshes the data",
+	)
+	useCache := flag.Bool(
+		"u",
+		true,
+		"Use cache, set to false to refresh cache (useful after making changes to config.json)",
+	)
+	flag.Usage = func() {
+		fmt.Fprintf(
+			flag.CommandLine.Output(),
+			"Usage: %s [-b] [-p=PORT] [-r=DURATION] [-u=false]\n", os.Args[0],
+		)
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	if flag.NArg() > 0 {
+		flag.Usage()
+		os.Exit(2)
+	}
+
+	var err error
+
+	log.SetFlags(log.Ltime | log.Lshortfile)
+
+	if *embed != "" {
+		host, err := embedString(*embed)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(host)
+		os.Exit(0)
+	}
+
+	if *background {
+		cfg := new(ConfigData)
+		configErr := cfg.Load(ConfigFile)
+		if configErr != nil {
+			log.Println("warn: config read failed: " + configErr.Error())
+			err = cfg.GetFromUserInput()
+			if err != nil {
+				log.Fatalln(err)
+			}
+			err = cfg.Save(ConfigFile)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		} else {
+			log.Println("Read config data")
+		}
+
+		ad := new(sc.AuthData)
+		ad.SetClientID(cfg.ClientID)
+		ad.SetClientSecret(cfg.ClientSecret)
+		ad.SetUserName(cfg.UserName)
+		err = ad.SetCacheFolder(CacheFolder)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if *useCache {
+			err = ad.GetCachedData()
+			if err != nil {
+				log.Println("warn: could not read cached data: " + err.Error())
+			} else {
+				log.Println("Read cached data")
+			}
+		}
+
+		bg := sc.NewBG()
+		bg.SetAddress(*port)
+		bg.SetAuthData(ad)
+		bg.SetInterval(*refreshTime)
+		bg.SetLiveCallback(notifyLives)
+		bg.SetOfflineCallback(notifyOfflines)
+		err = bg.Run()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		err = ad.SaveCache()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
+	if !*background {
+		ui := NewUI()
+		ui.SetPort(*port)
+		err = ui.Run()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+}
+
+func notifyLives(stream sc.StreamData) bool {
+	urgency := "normal"
+	var args []string
+	iconbase := "/usr/share/icons/Adwaita/48x48/categories/"
+	switch stream.GetService() {
+	case "angelthump":
+		if stream.(*sc.StrimsStreamData).Rustlers < 3 || stream.GetName() == "psrngafk" {
+			return false
+		}
+		args = []string{
+			stream.GetName(),
+			"Is being viewed on Strims!",
+			"--icon=" + iconbase + "applications-multimedia-symbolic.symbolic.png",
+			"--urgency=" + urgency,
+		}
+	case "m3u8":
+		break
+	case "twitch":
+		break
+	case "twitch-followed":
+		args = []string{
+			stream.GetName(),
+			"Just went live!",
+			"--icon=" + iconbase + "applications-games-symbolic.symbolic.png",
+			"--urgency=" + urgency,
+		}
+	case "twitch-vod":
+		break
+	case "youtube":
+		break
+	default:
+		break
+	}
+	if args != nil {
+		exec.Command("notify-send", args...).Run()
+	} else  {
+		return false
+	}
+	return true
+}
+
+func notifyOfflines(stream sc.StreamData) {
+	var args []string
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	switch stream.GetService() {
+	case "angelthump":
+		args = []string{
+			"@" + stream.GetName(),
+			"sggL I enjoyed my stay",
+			home + "Pictures/memes/sggLBase.png",
+			"--urgency=low",
+		}
+	}
+	if args != nil {
+		exec.Command("notify-send", args...).Run()
+	}
+}

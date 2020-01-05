@@ -11,7 +11,7 @@
 #define MAXWIDTH 50
 #define MAXHEIGHT 30
 
-typedef std::array<std::array<size_t, MAXWIDTH>, MAXHEIGHT> tiles_t;
+using tiles_t = std::array<std::array<size_t, MAXWIDTH>, MAXHEIGHT>;
 static tiles_t globalTiles{ {} };
 
 void draw_board(int score) {
@@ -32,7 +32,7 @@ void draw_board(int score) {
 	napms(5);
 }
 
-void iterate(TuringMachine& ArcadeCabinet, int& score) {
+void iterate(IntCode& ArcadeCabinet, int& score) {
 	ArcadeCabinet.run_program();
 	if (ArcadeCabinet.halted)
 		return;
@@ -72,7 +72,7 @@ long calculate_paddle_movement() {
 int run_ai(const std::vector<long>& prgState, bool display) {
 	if (display)
 		initscr();
-	TuringMachine ArcadeCabinet(prgState, 4096);
+	IntCode ArcadeCabinet(prgState, 4096);
 	ArcadeCabinet.prgState[0] = 2;
 	ArcadeCabinet.set_input_function(calculate_paddle_movement);
 	int score = 0;
@@ -91,7 +91,7 @@ int run_input_file(const std::vector<long>& prgState, bool display) {
 	// Much faster but only works with my input
 	if (display)
 		initscr();
-	TuringMachine ArcadeCabinet(prgState, 4096);
+	IntCode ArcadeCabinet(prgState, 4096);
 	ArcadeCabinet.prgState[0] = 2;
 	std::ifstream recordedinputs("recordedinputs.txt");
 	for (std::string directionInput;
@@ -129,7 +129,7 @@ int run_manually(const std::vector<long>& prgState) {
 	curs_set(0);
 	keypad(stdscr, true);
 	timeout(500);
-	TuringMachine ArcadeCabinet(prgState, 4096);
+	IntCode ArcadeCabinet(prgState, 4096);
 	ArcadeCabinet.prgState[0] = 2;
 	ArcadeCabinet.set_input_function(get_input);
 	int score = 0;
@@ -143,7 +143,7 @@ int run_manually(const std::vector<long>& prgState) {
 
 int count_tiles(const std::vector<long>& prgState) {
 	tiles_t localTiles{ {} };
-	TuringMachine ArcadeCabinet(prgState, 4096);
+	IntCode ArcadeCabinet(prgState, 4096);
 	size_t x = 0;
 	size_t y = 0;
 	while (!ArcadeCabinet.halted) {

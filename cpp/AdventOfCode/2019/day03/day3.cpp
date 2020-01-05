@@ -10,11 +10,11 @@
 #define PART1 1
 #define PART2 1
 
-typedef std::pair<char, int> DirectionInfo;
-typedef std::vector<DirectionInfo> Directions2d;
-typedef std::vector<Directions2d> Directions3d;
-typedef std::pair<int, int> Point;
-typedef std::set<Point> Points;
+using DirectionInfo = std::pair<char, int>;
+using Directions2d = std::vector<DirectionInfo>;
+using Directions3d = std::vector<Directions2d>;
+using Point = std::pair<int, int>;
+using Points = std::set<Point>;
 static const std::map<char, Point> movement = {
 	// Represents the changes in X, Y for 1 step in every direction
 	{ 'U', { 0, -1 } },

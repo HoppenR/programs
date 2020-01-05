@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 // All yee who enter here, heed this warning: Pepega
-// TODO: move code into functions
 #define INT_MAX 2147483647
 #define PART2 0
 int main(void) {

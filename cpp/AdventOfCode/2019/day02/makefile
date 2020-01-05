@@ -2,4 +2,4 @@ GCCFLAGS+= -march=native
 GCCFLAGS+= -O2
 
 all:
-	g++ $(GCCFLAGS) day*.cpp
+	g++ $(GCCFLAGS) ../common/IntCode.cpp day*.cpp

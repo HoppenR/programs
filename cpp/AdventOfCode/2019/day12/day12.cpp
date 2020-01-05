@@ -53,8 +53,8 @@ public:
 	}
 };
 
-typedef std::array<Moon, 4> MoonArray;
-typedef std::array<Position3D, 4> PositionArray;
+using MoonArray = std::array<Moon, 4>;
+using PositionArray = std::array<Position3D, 4>;
 
 void iterate(MoonArray& moons) {
 	for (Moon& moon : moons) {

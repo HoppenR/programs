@@ -4,11 +4,11 @@
 #define PART2 1
 
 int run_with_changes(const std::vector<long>& prgState, int noun, int verb) {
-	TuringMachine IntCodeComp(prgState);
-	IntCodeComp.prgState[1] = noun;
-	IntCodeComp.prgState[2] = verb;
-	IntCodeComp.run_program();
-	return IntCodeComp.prgState[0];
+	IntCode Computer(prgState);
+	Computer.prgState[1] = noun;
+	Computer.prgState[2] = verb;
+	Computer.run_program();
+	return Computer.prgState[0];
 }
 
 int run_with_tweakable_changes(const std::vector<long>& prgState) {

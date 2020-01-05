@@ -22,11 +22,14 @@ function indexToTime(ix) {
 function logTextFromArray(logArray, name) {
 	var fileLocation = `${__dirname}/logs/${name}.txt`;
 	var logger = fs.createWriteStream(fileLocation);
+	let lineswritten = 0;
 	for(var i = 0; i < logArray.length; i++) {
+		lineswritten += (logArray[i].match(/\n/g) || '').length;
 		logger.write(logArray[i]);
 	}
 	logger.end();
 	console.log(`Writing to ${fileLocation}\nType exit or quit to exit program`);
+	console.log(`Got ${lineswritten} lines`);
 	process.stdout.write("Or enter another name...");
 }
 

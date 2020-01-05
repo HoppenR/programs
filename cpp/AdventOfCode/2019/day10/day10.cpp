@@ -11,23 +11,23 @@
 
 // Requires c++17 to compile because of the usage of structured bindings
 
-typedef std::pair<ushort, ushort> Asteroid;
-typedef std::set<Asteroid> Asteroidset;
-typedef Asteroidset::const_iterator AsteroidsIter;
-typedef std::map<double, Asteroidset> AngleToAsteroidSetMap;
-typedef std::pair<Asteroid, ushort> BestStationInfo;
+using Asteroid = std::pair<ushort, ushort>;
+using Asteroidset = std::set<Asteroid>;
+using AsteroidsIter = Asteroidset::const_iterator;
+using AngleToAsteroidSetMap = std::map<double, Asteroidset>;
+using BestStationInfo = std::pair<Asteroid, ushort>;
 
 double get_angle(const Asteroid& from, const Asteroid& to) {
 	const double dx = to.first - from.first;
 	const double dy = to.second - from.second;
 	// Due to the y position increasing as we move south on the map, atan2
 	// returns clockwise angle instead of counter clockwise as if would if y
-	// position increases as we moved north on the map (like a normal euclidian
-	// plane)
+	// position increases as we moved north on the map
+	// (like a normal euclidean plane)
 	double angle = atan2(dy, dx) * (180 / M_PI);
 	angle += 90.0f; // align to "north" (south)
 	// Angle can be between -90.0f and +270.0f here, this normalizes it to
-	// between 0.0f and 360.0f
+	// between 0.0f and 359.9f
 	angle = fmod(angle + 360, 360);
 	return angle;
 }
@@ -50,22 +50,22 @@ BestStationInfo find_best_asteroid(const Asteroidset& AsterCoords) {
 	ushort highestOverviewCount = 0;
 	Asteroid bestAsteroid;
 	for (const Asteroid& asteroid : AsterCoords) {
-		const ushort count = count_visible_asteroids(AsterCoords, asteroid);
-		if (count > highestOverviewCount) {
-			highestOverviewCount = count;
+		const ushort visCount = count_visible_asteroids(AsterCoords, asteroid);
+		if (visCount > highestOverviewCount) {
+			highestOverviewCount = visCount;
 			bestAsteroid = asteroid;
 		}
 	}
 	return std::make_pair(bestAsteroid, highestOverviewCount);
 }
 
-AngleToAsteroidSetMap*
-get_all_asteroids_and_angles(const Asteroidset& AsterCoords,
-							 const Asteroid& station) {
+AngleToAsteroidSetMap* get_angles_map(const Asteroidset& AsterCoords,
+									  const Asteroid& station) {
 	// Returns a pointer to a newly allocated map
 	// this map maps angles to a set of asteroids, all asteroids in one set
-	// share the same angle The angle is relative to the coordinates from the
-	// station parameter
+	// share the same angle.
+	// The angle is calculated with the coordinates from the station parameter
+	// and is relative to the x-axis
 	AngleToAsteroidSetMap* anglesMap = new AngleToAsteroidSetMap;
 	for (const Asteroid& asteroid : AsterCoords) {
 		if (station == asteroid)
@@ -81,7 +81,7 @@ get_all_asteroids_and_angles(const Asteroidset& AsterCoords,
 AsteroidsIter find_closest_asteroid(AsteroidsIter iter, AsteroidsIter end,
 									const Asteroid& station) {
 	// Takes a set of asteroids that all share the same angle relative to the
-	// station And returns the closest one, calculated in manhattan distance
+	// station and returns the closest one, calculated in manhattan distance
 	AsteroidsIter closest;
 	ushort closestdist = USHRT_MAX;
 	while (iter != end) {
@@ -99,15 +99,14 @@ AsteroidsIter find_closest_asteroid(AsteroidsIter iter, AsteroidsIter end,
 int zap_200(const Asteroidset& AsterCoords, const Asteroid& station) {
 	// returns the coordinate of the 200th zapped asteroid in the following
 	// format: (x * 100 + y)
-	AngleToAsteroidSetMap* anglesMap =
-		get_all_asteroids_and_angles(AsterCoords, station);
+	AngleToAsteroidSetMap* anglesMap = get_angles_map(AsterCoords, station);
 	ushort zapped = 0;
 	while (true) {
 		// since we are iterating over 1 set of asteroids for every angle we
 		// only need to find the closest one for every iteration, and can
-		// safetly ignore the angle variable The map is sorted and iterating
-		// over it will start from angle = 0.0f and move towards angle =
-		// 359.9.0f
+		// safetly ignore the angle variable.
+		// The map is sorted and iterating over it will start from angle = 0.0f
+		// and move towards angle = 359.9f
 		for (auto& [_, asteroids] : *anglesMap) {
 			// asteroids here all share the same angle
 			const Asteroid closest = *find_closest_asteroid(

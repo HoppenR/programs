@@ -4,7 +4,9 @@
 #include <time.h>
 #define PART1 0
 #define PART2 0
-typedef std::array<std::array<size_t, 60>, 60> tiles_t;
+
+using tiles_t = std::array<std::array<size_t, 60>, 60>;
+
 static tiles_t globalTiles = { {} };
 static size_t globalx = 40;
 static size_t globaly = 40;
@@ -51,7 +53,7 @@ size_t compute(const std::vector<long>& prgState) {
 	cbreak();
 	curs_set(0);
 	keypad(stdscr, true);
-	TuringMachine RepairDroid(prgState, 4096);
+	IntCode RepairDroid(prgState, 4096);
 	RepairDroid.set_input_function(get_input);
 	while (true) {
 		RepairDroid.run_program();
