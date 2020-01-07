@@ -11,7 +11,7 @@
 #define MAXWIDTH 50
 #define MAXHEIGHT 30
 
-typedef std::array<std::array<size_t, MAXWIDTH>, MAXHEIGHT> tiles_t;
+using tiles_t = std::array<std::array<size_t, MAXWIDTH>, MAXHEIGHT>;
 static tiles_t globalTiles{ {} };
 
 void draw_board(int score) {

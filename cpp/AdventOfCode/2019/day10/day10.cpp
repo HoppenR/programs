@@ -11,11 +11,11 @@
 
 // Requires c++17 to compile because of the usage of structured bindings
 
-typedef std::pair<ushort, ushort> Asteroid;
-typedef std::set<Asteroid> Asteroidset;
-typedef Asteroidset::const_iterator AsteroidsIter;
-typedef std::map<double, Asteroidset> AngleToAsteroidSetMap;
-typedef std::pair<Asteroid, ushort> BestStationInfo;
+using Asteroid = std::pair<ushort, ushort>;
+using Asteroidset = std::set<Asteroid>;
+using AsteroidsIter = Asteroidset::const_iterator;
+using AngleToAsteroidSetMap = std::map<double, Asteroidset>;
+using BestStationInfo = std::pair<Asteroid, ushort>;
 
 double get_angle(const Asteroid& from, const Asteroid& to) {
 	const double dx = to.first - from.first;

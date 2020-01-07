@@ -5,8 +5,8 @@
 #define PART1 1
 #define PART2 1
 
-typedef std::pair<short, short> pos_t;
-typedef std::map<pos_t, short> hull_t;
+using pos_t = std::pair<short, short>;
+using hull_t = std::map<pos_t, short>;
 static const std::array<pos_t, 4> movement = {
 	// Represents the changes in X, Y for
 	// 0 = North, 1 = East, 2 = South, 3 = West

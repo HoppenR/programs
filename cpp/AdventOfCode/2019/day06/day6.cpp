@@ -10,11 +10,10 @@
 
 // Requires c++17 to compile because of the usage of structured bindings
 
-typedef std::pair<std::string, std::string> NodeInfo;
-// [planetName, parentName]
-typedef std::map<std::string, std::string> NodeMap;
+using NodeInfo = std::pair<std::string, std::string>;
+using NodeMap = std::map<std::string, std::string>;
 // [ [planetName, parentname], ]
-typedef std::map<std::string, int> AncestorMap;
+using AncestorMap = std::map<std::string, int>;
 // [ [planetName, stepsThere], ]
 
 class P {
