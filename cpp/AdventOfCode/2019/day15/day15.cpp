@@ -4,7 +4,9 @@
 #include <time.h>
 #define PART1 0
 #define PART2 0
+
 using tiles_t = std::array<std::array<size_t, 60>, 60>;
+
 static tiles_t globalTiles = { {} };
 static size_t globalx = 40;
 static size_t globaly = 40;

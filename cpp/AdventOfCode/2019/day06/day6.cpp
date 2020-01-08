@@ -16,12 +16,12 @@ using NodeMap = std::map<std::string, std::string>;
 using AncestorMap = std::map<std::string, int>;
 // [ [planetName, stepsThere], ]
 
-class P {
+class Person {
 public:
 	AncestorMap ancestors;
 	int steps = 0;
 	std::string planet;
-	P(std::string planet) {
+	Person(std::string planet) {
 		this->planet = planet;
 	}
 };
@@ -40,16 +40,15 @@ int count_orbits(const NodeMap& orbitTree) {
 
 int count_steps_intersect_node(const NodeMap& orbitTree) {
 	enum peopleindex { YOU = 0, SAN = 1 };
-	std::vector<P> People = {
-		{ P(orbitTree.at("YOU")) },
-		{ P(orbitTree.at("SAN")) },
+	std::vector<Person> People = {
+		{ Person(orbitTree.at("YOU")) },
+		{ Person(orbitTree.at("SAN")) },
 	};
-	for (P& Person : People) {
-		while (Person.planet != "COM") {
-			Person.ancestors.insert(
-				std::make_pair(Person.planet, Person.steps));
-			Person.planet = orbitTree.at(Person.planet);
-			Person.steps++;
+	for (Person& P : People) {
+		while (P.planet != "COM") {
+			P.ancestors.insert(std::make_pair(P.planet, P.steps));
+			P.planet = orbitTree.at(P.planet);
+			P.steps++;
 		}
 	}
 	int leaststeps = INT_MAX;
