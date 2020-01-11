@@ -12,16 +12,19 @@ std::vector<int> get_digits(const long number) {
 
 long find_largest_palindromic_number(const int numdigits) {
 	long largestPalindrome = 0;
-	const long target = pow(10, numdigits);
-	for (long i = pow(10, numdigits - 1) * 9; i < target; i++) {
-		for (long j = pow(10, numdigits - 1) * 9; j < target; j++) {
-			const long product = i * j;
+	const long start = pow(10, numdigits) - 1;
+	// XXX: We assume that both of the factors' Most Significant Digit
+	//      is always going to be 9     here ↓
+	const long end = pow(10, numdigits - 1) * 9;
+	for (long i = start; i > end; i--) {
+		// Decimal palindromic numbers with an even number of digits are
+		// divisible by 11.
+		// So we can loop from (start / 11) to (end / 11)
+		// and the answer will be (i * j * 11) for some i and j in our ranges
+		for (long j = start / 11; j > end / 11; j--) {
+			const long product = i * j * 11;
 			// Check if we can skip iteration
 			if (product < largestPalindrome)
-				continue;
-			// Decimal palindromic numbers with an even number of digits are
-			// divisible by 11.
-			if (product % 11 != 0)
 				continue;
 			std::vector<int> Digits = get_digits(product);
 			bool valid = true;
