@@ -10,6 +10,7 @@ std::vector<long> factorize(const long n) {
 	while (ncpy % 2 == 0) {
 		ncpy /= 2;
 		factors.push_back(2);
+		factorSum = (factorSum) ? (factorSum * 2) : 2;
 	}
 	while (curFactor < n && isRunning) {
 		if (ncpy % curFactor == 0) {
