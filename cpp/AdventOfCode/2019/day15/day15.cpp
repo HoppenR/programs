@@ -53,7 +53,7 @@ size_t compute(const std::vector<long>& prgState) {
 	cbreak();
 	curs_set(0);
 	keypad(stdscr, true);
-	TuringMachine RepairDroid(prgState, 4096);
+	IntCode RepairDroid(prgState, 4096);
 	RepairDroid.set_input_function(get_input);
 	while (true) {
 		RepairDroid.run_program();

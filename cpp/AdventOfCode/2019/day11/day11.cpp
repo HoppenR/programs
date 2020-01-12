@@ -23,7 +23,7 @@ static void operator+=(pos_t& lhs, const pos_t& rhs) {
 
 void paint(hull_t& hull, const std::vector<long>& prgState,
 		   short starting_tile) {
-	TuringMachine EHPR(prgState, 4096);
+	IntCode EHPR(prgState, 4096);
 	pos_t pos = { 0, 0 };
 	short direction = 0; // North
 	EHPR.inputValues.push_back(starting_tile);

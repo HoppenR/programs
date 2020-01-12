@@ -10,13 +10,13 @@ long amp_signal(const std::vector<long>& prgState,
 	std::set<long> outputSignals;
 	long maxsignal = 0;
 	do {
-		std::vector<TuringMachine> Amplifiers(5, TuringMachine(prgState));
+		std::vector<IntCode> Amplifiers(5, IntCode(prgState));
 		for (ulong i = 0; i < Amplifiers.size(); i++) {
 			Amplifiers[i].inputValues.push_back(phaseSettings[i]);
 		}
 		long in_output = 0;
 		do {
-			for (TuringMachine& Amp : Amplifiers) {
+			for (IntCode& Amp : Amplifiers) {
 				Amp.inputValues.push_back(in_output);
 				Amp.run_program();
 				in_output = Amp.message;
