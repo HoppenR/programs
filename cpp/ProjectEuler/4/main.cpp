@@ -2,20 +2,35 @@
 #include <math.h>
 #include <vector>
 
+// NOTE: Can only calculate Largest Palindrome Product for numdigits between 2
+// and 9 since we use integers and not strings, and there is no integer type
+// that can hold a large enough number for the 10-digit answer.
+
+long getn(long number, int n) {
+	// returns the nth digit in number, counted from right hand side, 0-based
+	return number / static_cast<long>(pow(10, n)) % 10;
+}
+
 std::vector<int> get_digits(const long number) {
-	std::vector<int> Digits;
-	for (int i = log10(number); i >= 0; i--) {
-		Digits.push_back(number / static_cast<long>(pow(10, i)) % 10);
+	size_t len = log10(number) + 1;
+	std::vector<int> Digits(len);
+	for (size_t i = 0; i < len; i++) {
+		Digits.at(i) = getn(number, len - 1 - i);
 	}
 	return Digits;
 }
 
 long find_largest_palindromic_number(const int numdigits) {
+	if (numdigits <= 1 || numdigits >= 10)
+		return -1;
 	long largestPalindrome = 0;
 	const long start = pow(10, numdigits) - 1;
-	// XXX: We assume that both of the factors' Most Significant Digit
-	//      is always going to be 9     here ↓
-	const long end = pow(10, numdigits - 1) * 9;
+	long end = 0;
+	// XXX: We assume that both factors always start with at least
+	//      (numdigits / 2) number of nines as their Most Significant Numbers
+	for (long i = 0; i < numdigits / 2; i++) {
+		end += 9 * pow(10, numdigits - 1 - i);
+	}
 	for (long i = start; i > end; i--) {
 		// Decimal palindromic numbers with an even number of digits are
 		// divisible by 11.
@@ -29,7 +44,7 @@ long find_largest_palindromic_number(const int numdigits) {
 			std::vector<int> Digits = get_digits(product);
 			bool valid = true;
 			for (size_t ii = 0; ii < Digits.size() / 2; ii++) {
-				if (Digits.at(ii) != Digits.at(Digits.size() - ii - 1)) {
+				if (Digits.at(ii) != Digits.at(Digits.size() - 1 - ii)) {
 					valid = false;
 					break;
 				}
