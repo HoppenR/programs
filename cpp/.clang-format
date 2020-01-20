@@ -1,4 +1,5 @@
 # My standard c++ clang-formatting options
+# Vim: set filetype=yaml :
 AccessModifierOffset : -4
 AlignAfterOpenBracket : Align
 AllowShortFunctionsOnASingleLine : Empty
