@@ -24,6 +24,9 @@ std::vector<long> factorize(const long n) {
 			curFactor += 2;
 		}
 	}
+	if (ncpy != 1) {
+		factors.push_back(ncpy);
+	}
 	return factors;
 }
 
