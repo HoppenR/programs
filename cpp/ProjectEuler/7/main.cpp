@@ -1,9 +1,9 @@
 #include <iostream>
+#include <math.h>
 
-// TODO: optimize this
-
-bool is_prime(int num) {
-	for (int i = 2; i < num; i++) {
+bool is_prime(const int num) {
+	const int target = sqrt(num);
+	for (int i = 2; i <= target; i++) {
 		if (num % i == 0) {
 			return false;
 		}
@@ -12,14 +12,17 @@ bool is_prime(int num) {
 }
 
 int find_nth_prime(int num) {
-	int primesfound = 0;
-	int ans = 0;
-	while (primesfound <= num) {
-		if (is_prime(++ans)) {
+	if (num == 1)
+		return 2;
+	int primesfound = 1; // 2
+	int ans = 3;
+	while (primesfound < num) {
+		if (is_prime(ans)) {
 			primesfound++;
 		}
+		ans += 2;
 	}
-	return ans;
+	return ans - 2;
 }
 
 int main(void) {
