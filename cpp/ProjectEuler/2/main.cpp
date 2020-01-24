@@ -1,16 +1,15 @@
-#include <algorithm>
-#include <array>
+#include <climits>
+#include <deque>
 #include <iostream>
 
-int sum_even_fibonaccis(const int upperbound) {
-	enum TermIndices { Left, Right, Next };
-	std::array<int, 3> terms = { 0, 1, 2 };
-	long ans = 0;
-	while (terms[Next] <= upperbound) {
-		if (terms[Next] % 2 == 0)
-			ans += terms[Next];
-		std::rotate(terms.begin(), terms.begin() + 1, terms.end());
-		terms[Next] = terms[Left] + terms[Right];
+size_t sum_even_fibonaccis(const size_t upperbound) {
+	std::deque<size_t> terms{ 1, 1 };
+	size_t ans = 0;
+	while (terms.back() <= upperbound) {
+		terms.push_back(terms.at(0) + terms.at(1));
+		if (terms.back() % 2 == 0)
+			ans += terms.back();
+		terms.pop_front();
 	}
 	return ans;
 }
