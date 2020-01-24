@@ -6,7 +6,7 @@
 // and 9 since we use integers and not strings, and there is no integer type
 // that can hold a large enough number for the 10-digit answer.
 
-long getn(long number, int n) {
+long getn(const long number, const int n) {
 	// returns the nth digit in number, counted from right hand side, 0-based
 	return number / static_cast<long>(pow(10, n)) % 10;
 }

@@ -11,7 +11,7 @@ bool is_prime(const int num) {
 	return true;
 }
 
-int find_nth_prime(int num) {
+int find_nth_prime(const int num) {
 	if (num == 1)
 		return 2;
 	int primesfound = 1; // 2

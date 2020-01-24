@@ -6,14 +6,14 @@
 
 // NOTE: Very easy to run into integer overflows when using 20+ factors
 
-size_t greatest_product_n_adj(std::string numbers, size_t nAdjacent) {
+size_t max_product_n_adj(const std::string& numbers, const size_t nFactors) {
 	size_t currentProduct = 0;
 	size_t greatestProduct = 0;
 	std::deque<int> factors;
-	for (size_t i = 0; i < nAdjacent; i++) {
+	for (size_t i = 0; i < nFactors; i++) {
 		factors.push_back(numbers.at(i) - '0');
 	}
-	for (size_t i = nAdjacent; i < numbers.size(); i++) {
+	for (size_t i = nFactors; i < numbers.size(); i++) {
 		currentProduct = 1;
 		for (int f : factors) {
 			currentProduct *= static_cast<size_t>(f);
@@ -25,7 +25,7 @@ size_t greatest_product_n_adj(std::string numbers, size_t nAdjacent) {
 	return greatestProduct;
 };
 
-std::string file_data(std::string filename) {
+std::string file_data(const std::string& filename) {
 	std::ifstream file(filename);
 	if (file.is_open()) {
 		std::string data;
@@ -42,5 +42,5 @@ std::string file_data(std::string filename) {
 }
 
 int main(void) {
-	std::cout << greatest_product_n_adj(file_data("numbers.txt"), 13) << '\n';
+	std::cout << max_product_n_adj(file_data("numbers.txt"), 13) << '\n';
 }
