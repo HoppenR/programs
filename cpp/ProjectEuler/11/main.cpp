@@ -29,7 +29,7 @@ long max_product_n_adj(const Vec2d& input, const size_t nFactors) {
 					largestSum = std::max(largestSum, sum);
 				}
 				// Compare Diagonally down-left
-				if (c >= 3) {
+				if (c >= nFactors - 1) {
 					long sum = 1;
 					for (size_t i = 0; i < nFactors; i++) {
 						sum *= input.at(l + i).at(c - i);
