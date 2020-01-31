@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -5,6 +6,18 @@
 #include <vector>
 
 using Vec2d = std::vector<std::vector<int>>;
+
+long adj_product_dir(const Vec2d& input, const int lStart, const int cStart,
+					 const int lDirection, const int cDirection,
+					 const int nFactors) {
+	long sum = 1;
+	for (int i = 0; i < nFactors; i++) {
+		size_t l = static_cast<size_t>(lStart + i * lDirection);
+		size_t c = static_cast<size_t>(cStart + i * cDirection);
+		sum *= input.at(l).at(c);
+	}
+	return sum;
+}
 
 long max_product_n_adj(const Vec2d& input, const size_t nFactors) {
 	long largestSum = 0;
@@ -14,36 +27,24 @@ long max_product_n_adj(const Vec2d& input, const size_t nFactors) {
 			if (l <= input.size() - nFactors) {
 				// Compare vertically down
 				{
-					long sum = 1;
-					for (size_t i = 0; i < nFactors; i++) {
-						sum *= input.at(l + i).at(c);
-					}
+					long sum = adj_product_dir(input, l, c, 1, 0, nFactors);
 					largestSum = std::max(largestSum, sum);
 				}
 				// Compare Diagonally down-right
 				if (c <= input.at(l).size() - nFactors) {
-					long sum = 1;
-					for (size_t i = 0; i < nFactors; i++) {
-						sum *= input.at(l + i).at(c + i);
-					}
+					long sum = adj_product_dir(input, l, c, 1, 1, nFactors);
 					largestSum = std::max(largestSum, sum);
 				}
 				// Compare Diagonally down-left
 				if (c >= nFactors - 1) {
-					long sum = 1;
-					for (size_t i = 0; i < nFactors; i++) {
-						sum *= input.at(l + i).at(c - i);
-					}
+					long sum = adj_product_dir(input, l, c, 1, -1, nFactors);
 					largestSum = std::max(largestSum, sum);
 				}
 			}
 			if (c <= input.at(l).size() - nFactors) {
 				// Compare horizontally right
 				{
-					long sum = 1;
-					for (size_t i = 0; i < nFactors; i++) {
-						sum *= input.at(l).at(c + i);
-					}
+					long sum = adj_product_dir(input, l, c, 0, 1, nFactors);
 					largestSum = std::max(largestSum, sum);
 				}
 			}
