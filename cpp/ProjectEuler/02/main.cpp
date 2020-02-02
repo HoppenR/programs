@@ -3,7 +3,7 @@
 #include <iostream>
 
 size_t sum_even_fibonaccis(const size_t upperbound) {
-	std::deque<size_t> terms{ 1, 1 };
+	std::deque<size_t> terms = { 1, 1 };
 	size_t ans = 0;
 	while (terms.back() <= upperbound) {
 		terms.push_back(terms.at(0) + terms.at(1));
