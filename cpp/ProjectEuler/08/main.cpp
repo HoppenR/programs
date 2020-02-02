@@ -15,7 +15,7 @@ size_t max_product_n_adj(const std::string& numbers, const size_t nFactors) {
 	}
 	for (size_t i = nFactors; i < numbers.size(); i++) {
 		currentProduct = 1;
-		for (int f : factors) {
+		for (const int f : factors) {
 			currentProduct *= static_cast<size_t>(f);
 		}
 		greatestProduct = std::max(greatestProduct, currentProduct);

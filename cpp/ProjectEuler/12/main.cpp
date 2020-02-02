@@ -38,7 +38,7 @@ std::vector<size_t> factorize(const size_t n) {
 size_t num_factors_for_n(const size_t n) {
 	const std::vector<size_t> factors = factorize(n);
 	std::map<size_t, size_t> factorMap;
-	for (size_t f : factors) {
+	for (const size_t f : factors) {
 		if (!factorMap.insert(std::make_pair(f, 1)).second) {
 			factorMap.at(f) += 1;
 		}
