@@ -54,11 +54,10 @@ long max_product_n_adj(const Vec2d& input, const size_t nFactors) {
 }
 
 Vec2d file_data_vec2d(const std::string& filename) {
-	std::ifstream ifs(filename, std::ifstream::in);
+	std::ifstream ifsnum(filename);
 	std::stringstream ssif;
-	if (ifs.is_open()) {
-		ssif << ifs.rdbuf();
-		ifs.close();
+	if (ifsnum.is_open()) {
+		ssif << ifsnum.rdbuf();
 	} else {
 		throw std::runtime_error("File does not exist");
 	}

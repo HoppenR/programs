@@ -26,19 +26,16 @@ size_t max_product_n_adj(const std::string& numbers, const size_t nFactors) {
 };
 
 std::string file_data(const std::string& filename) {
-	std::ifstream file(filename);
-	if (file.is_open()) {
-		std::string data;
-		while (file.peek() != EOF) {
-			char c = file.get();
-			if (c != '\n') {
-				data += c;
-			}
+	std::ifstream fsnum(filename);
+	std::string numbers;
+	if (fsnum.is_open()) {
+		for (std::string line; std::getline(fsnum, line);) {
+			numbers += line;
 		}
-		file.close();
-		return data;
+	} else {
+		throw std::runtime_error("File does not exist");
 	}
-	throw std::runtime_error("File does not exist");
+	return numbers;
 }
 
 int main(void) {
