@@ -34,7 +34,7 @@ size_t binomial_coefficient(const size_t n, const size_t k) {
 }
 
 size_t square_grid_paths_n_size(const size_t gridSize) {
-	if (gridSize <= 0 || gridSize >= 33) {
+	if (gridSize <= 0 || gridSize >= 34) {
 		return 0;
 	}
 	// We are looking for the C(n, k) ways of rearranging k items in n places
