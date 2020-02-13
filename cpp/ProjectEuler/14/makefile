@@ -2,4 +2,4 @@ GCCFLAGS+= -march=native
 GCCFLAGS+= -O2
 
 all:
-	g++ main.cpp
+	g++ $(GCCFLAGS) main.cpp
