@@ -1,8 +1,8 @@
+#include <cmath>
 #include <iostream>
-#include <math.h>
 
 bool is_prime(const int num) {
-	const int target = sqrt(num);
+	const int target = std::sqrt(num);
 	for (int i = 2; i <= target; i++) {
 		if (num % i == 0) {
 			return false;

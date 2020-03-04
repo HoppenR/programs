@@ -1,5 +1,5 @@
+#include <cmath>
 #include <iostream>
-#include <math.h>
 #include <vector>
 
 // NOTE: Can only calculate Largest Palindrome Product for numdigits between 2
@@ -8,7 +8,7 @@
 
 long getn(const long number, const int n) {
 	// returns the nth digit in number, counted from right hand side, 0-based
-	return number / static_cast<long>(pow(10, n)) % 10;
+	return number / static_cast<long>(std::pow(10, n)) % 10;
 }
 
 std::vector<int> get_digits(const long number) {
@@ -24,12 +24,12 @@ long find_largest_palindromic_number(const int numdigits) {
 	if (numdigits <= 1 || numdigits >= 10)
 		return -1;
 	long largestPalindrome = 0;
-	const long start = pow(10, numdigits) - 1;
+	const long start = std::pow(10, numdigits) - 1;
 	long end = 0;
 	// XXX: We assume that both factors always start with at least
 	//      (numdigits / 2) number of nines as their Most Significant Numbers
 	for (long i = 0; i < numdigits / 2; i++) {
-		end += 9 * pow(10, numdigits - 1 - i);
+		end += 9 * std::pow(10, numdigits - 1 - i);
 	}
 	for (long i = start; i > end; i--) {
 		// Decimal palindromic numbers with an even number of digits are

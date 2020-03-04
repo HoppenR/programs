@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 #include <numeric> // std::lcm requires -std=c++17
 

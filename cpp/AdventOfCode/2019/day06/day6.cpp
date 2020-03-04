@@ -66,7 +66,6 @@ int count_steps_intersect_node(const NodeMap& orbitTree) {
 int main(void) {
 	const time_t start = clock();
 	NodeMap orbitTree;
-	std::string inputString;
 	for (std::string line; std::getline(std::cin, line);) {
 		std::stringstream lineStream(line);
 		std::string planetName, parentName;

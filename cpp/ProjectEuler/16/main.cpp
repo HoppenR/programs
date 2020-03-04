@@ -1,38 +1,45 @@
+#include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <string>
+#include <vector>
 
-constexpr int ChrDecDiff = 48; // 1 + 48 = '1'
+// TODO: optimize this
 
-std::string bignum_pow(const size_t base, const size_t exponent) {
-	std::string sum = std::to_string(base);
+uint8_t getn(const size_t number, const uint8_t n) {
+	// returns the nth digit in number, counted from right hand side, 0-based
+	return number / static_cast<uint8_t>(std::pow(10, n)) % 10;
+}
+
+std::vector<uint8_t> bignum_pow(const size_t base, const size_t exponent) {
+	std::vector<uint8_t> sum;
+	const float lgBase = log10f(base);
+	if (!std::isinf(lgBase)) {
+		for (uint8_t i = 0; i <= static_cast<uint8_t>(lgBase); i++) {
+			sum.insert(sum.begin(), getn(base, i));
+		}
+	}
 	for (size_t i = 1; i < exponent; i++) {
-		short carry = 0;
+		size_t carry = 0;
 		for (size_t j = 0; j < sum.size(); j++) {
-			short digit = (sum.at(sum.size() - 1 - j) - ChrDecDiff);
-			digit *= base;
-			digit += carry;
-			carry = 0;
-			while (digit >= 10) {
-				carry++;
-				digit -= 10;
+			size_t product = sum.at(sum.size() - 1 - j) * base + carry;
+			sum.at(sum.size() - 1 - j) = product % 10;
+			carry = product / 10;
+		}
+		const float lgCarry = log10f(carry);
+		if (!std::isinf(lgCarry)) {
+			for (uint8_t j = 0; j <= static_cast<uint8_t>(lgCarry); j++) {
+				sum.insert(sum.begin(), getn(carry, j));
 			}
-			sum.at(sum.size() - 1 - j) = digit + ChrDecDiff;
-		}
-		while (carry > 10) {
-			sum.insert(sum.begin(), (carry % 10) + ChrDecDiff);
-			carry /= 10;
-		}
-		if (carry) {
-			sum.insert(sum.begin(), carry + ChrDecDiff);
 		}
 	}
 	return sum;
 }
 
-size_t sum_bignum_digits(const std::string& number) {
+size_t sum_bignum_digits(const std::vector<uint8_t>& number) {
 	size_t sum = 0;
-	for (size_t i = 0; i < number.size(); i++) {
-		sum += static_cast<size_t>(number.at(i) - ChrDecDiff);
+	for (const uint8_t n : number) {
+		sum += n;
 	}
 	return sum;
 }

@@ -1,13 +1,13 @@
+#include <cmath>
 #include <iostream>
-#include <math.h>
 
 long sum_square_difference(long num) {
 	num = std::abs(num);
 	const long sum = (num * (num + 1) / 2);
-	const long sumSquared = pow(sum, 2);
+	const long sumSquared = std::pow(sum, 2);
 	long squaresSum = 0;
 	for (long i = 1; i <= num; i++) {
-		squaresSum += pow(i, 2);
+		squaresSum += std::pow(i, 2);
 	}
 	return sumSquared - squaresSum;
 }

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <map>
-#include <math.h>
 #include <utility>
 #include <vector>
 
@@ -9,20 +8,20 @@
 std::vector<size_t> factorize(const size_t n) {
 	bool isRunning = true;
 	size_t curFactor = 3;
-	size_t factorSum = 0;
+	size_t factorPrd = 0;
 	size_t ncpy = n;
 	std::vector<size_t> factors;
 	while (ncpy % 2 == 0) {
 		ncpy /= 2;
 		factors.push_back(2);
-		factorSum = (factorSum) ? (factorSum * 2) : 2;
+		factorPrd = (factorPrd) ? (factorPrd * 2) : 2;
 	}
 	while (curFactor < n && isRunning) {
 		if (ncpy % curFactor == 0) {
 			ncpy /= curFactor;
 			factors.push_back(curFactor);
-			factorSum = (factorSum) ? (factorSum * curFactor) : curFactor;
-			if (factorSum == n) {
+			factorPrd = (factorPrd) ? (factorPrd * curFactor) : curFactor;
+			if (factorPrd == n) {
 				isRunning = false;
 			}
 		} else {
