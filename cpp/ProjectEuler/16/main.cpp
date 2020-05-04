@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -36,12 +37,8 @@ std::vector<uint8_t> bignum_pow(const size_t base, const size_t exponent) {
 	return sum;
 }
 
-size_t sum_bignum_digits(const std::vector<uint8_t>& number) {
-	size_t sum = 0;
-	for (const uint8_t n : number) {
-		sum += n;
-	}
-	return sum;
+int sum_bignum_digits(const std::vector<uint8_t>& number) {
+	return std::accumulate(number.begin(), number.end(), 0);
 }
 
 int main(void) {
