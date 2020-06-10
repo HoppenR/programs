@@ -345,7 +345,7 @@ void open_link(const keyvalvec_t& choices, const size_t& choice) {
 	}
 	syscall += browser;
 	syscall += " ";
-	syscall += "https://player.twitch.tv/?channel=";
+	syscall += "https://strims.gg/twitch/";
 	syscall += choices[choice].name;
 	system(syscall.c_str());
 	return;

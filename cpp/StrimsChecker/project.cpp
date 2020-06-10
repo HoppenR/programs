@@ -241,7 +241,7 @@ void open_link(const keyvalvec_t& choices, const size_t& choice) {
 		{ "facebook", "https://www.facebook.com/video/embed" },
 		{ "mixer", "https://mixer.com/embed/player/" },
 		{ "smashcast", "https://www.smashcast.tv/embed/" },
-		{ "twitch", "https://player.twitch.tv/?channel=" },
+		{ "twitch", "https://strims.gg/twitch/" },
 		{ "twitch-vod", "https://player.twitch.tv/?video=v" },
 		{ "ustream", "https://www.ustream.tv/embed/" },
 		{ "vaughn", "https://vaughnlive.tv/embed/video/" },
