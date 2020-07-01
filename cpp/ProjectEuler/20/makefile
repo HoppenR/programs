@@ -2,4 +2,4 @@ GCCFLAGS+= -march=native
 GCCFLAGS+= -O2
 
 alĺ:
-	g++ $(GCCFLAGS) main.cpp
+	g++ $(GCCFLAGS) ../common/bignum/bignum.cpp main.cpp
