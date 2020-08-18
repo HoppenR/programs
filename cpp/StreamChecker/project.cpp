@@ -344,9 +344,12 @@ void open_link(const keyvalvec_t& choices, const size_t& choice) {
 		throw(std::runtime_error("BROWSER is unset"));
 	}
 	syscall += browser;
-	syscall += " ";
-	syscall += "https://strims.gg/twitch/";
+	syscall += ' ';
+	syscall += '\"';
+	syscall += "https://player.twitch.tv/?channel=";
 	syscall += choices[choice].name;
+	syscall += "&parent=strims.gg";
+	syscall += '\"';
 	system(syscall.c_str());
 	return;
 }
