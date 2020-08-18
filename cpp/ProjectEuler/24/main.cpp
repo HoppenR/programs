@@ -19,5 +19,5 @@ long vector_to_long(const std::vector<int> digs) {
 
 int main(void) {
 	const std::vector<int> digs = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	std::cout << vector_to_long(nth_permutation(digs, 1000000)) << '\n';
+	std::cout << vector_to_long(nth_permutation(digs, 999999)) << '\n';
 }

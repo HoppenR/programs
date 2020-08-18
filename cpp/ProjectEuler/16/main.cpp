@@ -1,14 +1,8 @@
 #include "../common/bignum/bignum.hpp"
 #include <iostream>
 
-std::vector<uint8_t> bignum_pow(const size_t base, const size_t exponent) {
-	std::vector<uint8_t> sum;
-	const float lgBase = log10f(base);
-	if (!std::isinf(lgBase)) {
-		for (uint8_t i = 0; i <= static_cast<uint8_t>(lgBase); i++) {
-			sum.insert(sum.begin(), getn(base, i));
-		}
-	}
+BigNum bignum_pow(const size_t base, const size_t exponent) {
+	BigNum sum = split_to_bignum(base);
 	for (size_t i = 1; i < exponent; i++) {
 		sum = bignum_mult(sum, base);
 	}

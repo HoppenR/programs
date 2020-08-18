@@ -4,8 +4,7 @@ uint8_t getn(const size_t number, const uint8_t n) {
 	return number / static_cast<uint8_t>(std::pow(10, n)) % 10;
 }
 
-std::vector<uint8_t> bignum_mult(std::vector<uint8_t> sum,
-								 const uint8_t multer) {
+BigNum bignum_mult(BigNum sum, const uint8_t multer) {
 	size_t carry = 0;
 	for (size_t j = 0; j < sum.size(); j++) {
 		size_t product = sum.at(sum.size() - 1 - j) * multer + carry;
@@ -20,6 +19,17 @@ std::vector<uint8_t> bignum_mult(std::vector<uint8_t> sum,
 	}
 	return sum;
 }
-int sum_bignum_digits(const std::vector<uint8_t>& number) {
+int sum_bignum_digits(const BigNum& number) {
 	return std::accumulate(number.begin(), number.end(), 0);
+}
+
+BigNum split_to_bignum(size_t number) {
+	BigNum splitnum;
+	const float lgBase = log10f(number);
+	if (!std::isinf(lgBase)) {
+		for (uint8_t i = 0; i <= static_cast<uint8_t>(lgBase); i++) {
+			splitnum.insert(splitnum.begin(), getn(number, i));
+		}
+	}
+	return splitnum;
 }
