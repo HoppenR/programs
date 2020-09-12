@@ -1,5 +1,7 @@
 # Streamchecker.bin
 ## General info
+### To use this, you must `#define` macros that contain your twitch user ID (v5 api) and a client id
+
 Streamchecker fetches streams for a twitch user given its user ID and a client
 id (API Key), and displays their viewers, name, game, title (optional), and time
 of going live in your timezone.
@@ -25,13 +27,15 @@ Navigation in the ncurses interface is done with vim-like movement:
 ## Usage
 Currently the only reliable command line flags are:
 
-`--vods`: Do not filter streams that are streaming vods
+`-v`: Do not filter streams that are streaming vods
 
-`--rerun`: Do not filter streams with type "rerun" or titles that begin with "RERUN"
+`-r`: Do not filter streams with type "rerun" or titles that begin with "RERUN"
 
-`--all`: Do not filter any stream at all
+`-a`: Do not filter any stream at all
 
-`--title`: Display the title of each stream
+`-t`: Display the title of each stream
+
+Long options are currently broken
 
 ## Inspiration
 I made this project soloely to learn c/c++, the code is very c-like and is
