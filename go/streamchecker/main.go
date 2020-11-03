@@ -10,28 +10,30 @@ import (
 var (
 	userID       string
 	clientID     string
-	clientSecret string
+	// clientSecret string
 	tmptoken     string
 )
 
+// Figure out how to create more tview windows, display extra info on the
+// hovered window
 func main() {
-	// TODO: validate the token and refresh as needed
+	//TODO: validate the token and refresh as needed
 	var err error
 	log.SetFlags(log.Lshortfile)
-	follows, err := get_all_follows(tmptoken, clientID, userID)
+	follows, err := getAllFollows(tmptoken, clientID, userID)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	channels, err := initialize_channels(tmptoken, clientID, follows)
+	channels, err := initializeChannels(tmptoken, clientID, follows)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 	sort.Sort(sort.Reverse(channels))
-	games, err := get_game_info(tmptoken, clientID, channels)
+	games, err := getGameInfo(tmptoken, clientID, channels)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	err = print_menu(games, channels)
+	err = printMenu(games, channels)
 	if err != nil {
 		log.Println(err.Error())
 		os.Exit(2)

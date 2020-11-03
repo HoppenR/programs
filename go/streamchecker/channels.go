@@ -37,7 +37,7 @@ func (si *Channels) Swap(i, j int) {
 	si.Data[i], si.Data[j] = si.Data[j], si.Data[i]
 }
 
-func get_live_channels(token, clientID string, follows *Follows, first int) (channelsPart string, err error) {
+func getLiveChannels(token, clientID string, follows *Follows, first int) (channelsPart string, err error) {
 	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/streams", nil)
 	if err != nil {
 		return "", err
@@ -63,8 +63,8 @@ func get_live_channels(token, clientID string, follows *Follows, first int) (cha
 	return channelsPart, nil
 }
 
-func initialize_channels(token, clientID string, follows *Follows) (channels *Channels, err error) {
-	jsonBody, err := get_live_channels(token, clientID, follows, 0)
+func initializeChannels(token, clientID string, follows *Follows) (channels *Channels, err error) {
+	jsonBody, err := getLiveChannels(token, clientID, follows, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func initialize_channels(token, clientID string, follows *Follows) (channels *Ch
 		return nil, err
 	}
 	for i := 100; i < follows.Total; i += 100 {
-		jsonBody, err = get_live_channels(token, clientID, follows, i)
+		jsonBody, err = getLiveChannels(token, clientID, follows, i)
 		if err != nil {
 			return nil, err
 		}

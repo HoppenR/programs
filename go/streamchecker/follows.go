@@ -31,7 +31,7 @@ func (lhs *Follows) update(rhs *Follows) {
 	lhs.Data = append(lhs.Data, rhs.Data...)
 }
 
-func get_follows_part(token, clientID, userID, pagCursor string) (followsPart string, err error) {
+func getFollowsPart(token, clientID, userID, pagCursor string) (followsPart string, err error) {
 	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/users/follows", nil)
 	if err != nil {
 		return "", err
@@ -56,14 +56,20 @@ func get_follows_part(token, clientID, userID, pagCursor string) (followsPart st
 	return followsPart, nil
 }
 
-func get_all_follows(token, clientID, userID string) (follows *Follows, err error) {
-	jsonBody, err := get_follows_part(token, clientID, userID, "")
+func getAllFollows(token, clientID, userID string) (follows *Follows, err error) {
+	jsonBody, err := getFollowsPart(token, clientID, userID, "")
+	if err != nil {
+		return nil, err
+	}
 	err = json.Unmarshal([]byte(jsonBody), &follows)
 	if err != nil {
 		return nil, err
 	}
 	for len(follows.Data) != follows.Total {
-		jsonBody, err = get_follows_part(token, clientID, userID, follows.Pagination.Cursor)
+		jsonBody, err = getFollowsPart(token, clientID, userID, follows.Pagination.Cursor)
+		if err != nil {
+			return nil, err
+		}
 		tmpFollows := new(Follows)
 		err = json.Unmarshal([]byte(jsonBody), &tmpFollows)
 		if err != nil {

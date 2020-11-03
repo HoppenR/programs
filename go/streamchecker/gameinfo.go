@@ -18,7 +18,7 @@ type GameIdentity struct {
 	Name string `json:"name"`
 }
 
-func get_game_info(token, clientID string, channels *Channels) (games *GameInfo, err error) {
+func getGameInfo(token, clientID string, channels *Channels) (games *GameInfo, err error) {
 	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/games", nil)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,10 @@ func get_game_info(token, clientID string, channels *Channels) (games *GameInfo,
 	return games, nil
 }
 
-func (g *GameInfo) get_name(id string) (gameName string, err error) {
+func (g *GameInfo) getName(id string) (gameName string, err error) {
+	if id == "" {
+		return "None", nil
+	}
 	if g.IDToName == nil {
 		// Populate map
 		g.IDToName = make(map[string]string)

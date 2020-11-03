@@ -13,7 +13,7 @@ type UI struct {
 	errorState error
 }
 
-func (ui *UI) input_handler(event *tcell.EventKey) *tcell.EventKey {
+func (ui *UI) inputHandler(event *tcell.EventKey) *tcell.EventKey {
 	sel := ui.list.GetCurrentItem()
 	cnt := ui.list.GetItemCount()
 	switch event.Key() {
@@ -45,7 +45,7 @@ func (ui *UI) input_handler(event *tcell.EventKey) *tcell.EventKey {
 		case 'l':
 			// Is calling SelectedFunc immediately a good idea?
 			primaryText, _ := ui.list.GetItemText(sel)
-			ui.open_link(0, primaryText, "", 0)
+			ui.openLink(0, primaryText, "", 0)
 			return nil
 		case 'q':
 			ui.app.Stop()
@@ -56,12 +56,12 @@ func (ui *UI) input_handler(event *tcell.EventKey) *tcell.EventKey {
 	return event
 }
 
-func (ui *UI) open_link(_ int, userName string, _ string, _ rune) {
+func (ui *UI) openLink(_ int, userName string, _ string, _ rune) {
 	ui.app.Stop()
 	browser := os.Getenv("BROWSER")
 	if browser == "" {
 		// Is there a good way to handle errors here?
-		ui.errorState = fmt.Errorf("Set $BROWSER before opening links")
+		ui.errorState = fmt.Errorf("set $BROWSER before opening links")
 	} else {
 		fmt.Printf(
 			"%s %s%s%s\n", browser,
@@ -70,7 +70,7 @@ func (ui *UI) open_link(_ int, userName string, _ string, _ rune) {
 	}
 }
 
-func print_menu(games *GameInfo, channels *Channels) (err error) {
+func printMenu(games *GameInfo, channels *Channels) (err error) {
 	ui := &UI{
 		app:  tview.NewApplication(),
 		list: tview.NewList(),
@@ -81,7 +81,7 @@ func print_menu(games *GameInfo, channels *Channels) (err error) {
 	})
 	for i := 0; i < len(channels.Data); i++ {
 		v := &channels.Data[i]
-		gameName, err := games.get_name(v.GameID)
+		gameName, err := games.getName(v.GameID)
 		if err != nil {
 			return err
 		}
@@ -96,8 +96,8 @@ func print_menu(games *GameInfo, channels *Channels) (err error) {
 	ui.list.SetSecondaryTextColor(0)
 	ui.list.SetTitle("Streamchecker")
 	ui.list.SetBorder(true)
-	ui.list.SetInputCapture(ui.input_handler)
-	ui.list.SetSelectedFunc(ui.open_link)
+	ui.list.SetInputCapture(ui.inputHandler)
+	ui.list.SetSelectedFunc(ui.openLink)
 	err = ui.app.SetRoot(ui.list, true).SetFocus(ui.list).Run()
 	if err != nil {
 		return err
