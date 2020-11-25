@@ -10,7 +10,8 @@ Explanation:
 
 `clientID`: The api key of your dev.twitch.tv project
 
-`tmptoken`: Temporarily used hardcoded app access token
+`tmptoken`: Temporarily used hardcoded app access token, to get an app access
+token you can use [this](https://github.com/twitchdev/authentication-go-sample/blob/master/oauth-client-credentials/main.go)
 
 `userID`: the ID of your twitch account, to get one you will have to use the
 legacy api for now, because the new one requires user permissions, example request:
@@ -23,4 +24,7 @@ curl -H 'Accept: application/vnd.twitchtv.v5+json' \
 
 # Navigation
 standard vim navigation: `jkl` or arrow keys + enter
+
+`f` to open a filter dialog
+
 `q` to quit

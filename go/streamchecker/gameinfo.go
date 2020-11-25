@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"errors"
 )
 
 type GameInfo struct {
@@ -19,6 +19,7 @@ type GameIdentity struct {
 }
 
 func getGameInfo(token, clientID string, channels *Channels) (games *GameInfo, err error) {
+	// in theory we might request more than 100 games at once and get an error
 	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/games", nil)
 	if err != nil {
 		return nil, err
@@ -40,6 +41,9 @@ func getGameInfo(token, clientID string, channels *Channels) (games *GameInfo, e
 		return nil, err
 	}
 	err = json.Unmarshal([]byte(jsonBody), &games)
+	if err != nil {
+		return nil, err
+	}
 	return games, nil
 }
 
@@ -56,7 +60,7 @@ func (g *GameInfo) getName(id string) (gameName string, err error) {
 	}
 	gameName, ok := g.IDToName[id]
 	if !ok {
-		return "", fmt.Errorf("ID does not exist")
+		return "", errors.New("ID does not exist")
 	}
 	return gameName, nil
 }

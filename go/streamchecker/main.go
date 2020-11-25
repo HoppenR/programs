@@ -8,11 +8,16 @@ import (
 
 // go build -ldflags "-X main.userID=XXX -X main.clientID=XXX -X main.clientSecret=XXX"
 var (
-	userID       string
-	clientID     string
+	userID   string
+	clientID string
 	// clientSecret string
-	tmptoken     string
+	tmptoken string
 )
+
+// ✅ searching/filtering,
+// ❌ command line arguments,
+// ❌ figure out live alert library meme,
+// ❌ and background checking
 
 // Figure out how to create more tview windows, display extra info on the
 // hovered window
