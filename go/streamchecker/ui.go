@@ -19,15 +19,15 @@ type UI struct {
 }
 
 type PopupPage struct {
+	con   *tview.Grid
 	input *tview.InputField
-	win   *tview.Flex
 }
 
 type MainPage struct {
+	con         *tview.Flex
 	displayList *tview.List
 	streamInfo  *tview.TextView
 	streamList  *tview.List
-	win         *tview.Flex
 }
 
 func (ui *UI) inputHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -119,14 +119,14 @@ func printMenu(channels *Channels) (err error) {
 		app:   tview.NewApplication(),
 		pages: tview.NewPages(),
 		pg1: MainPage{
+			con:         tview.NewFlex(),
 			displayList: tview.NewList(),
 			streamInfo:  tview.NewTextView(),
 			streamList:  tview.NewList(),
-			win:         tview.NewFlex(),
 		},
 		pg2: PopupPage{
+			con:   tview.NewGrid(),
 			input: tview.NewInputField(),
-			win:   tview.NewFlex(),
 		},
 	}
 	ui.app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
@@ -139,8 +139,8 @@ func printMenu(channels *Channels) (err error) {
 		return err
 	}
 	ui.setupPopupPage()
-	ui.pages.AddPage("Main Window", ui.pg1.win, true, true)
-	ui.pages.AddPage("Popup", ui.pg2.win, true, false)
+	ui.pages.AddPage("Main Window", ui.pg1.con, true, true)
+	ui.pages.AddPage("Popup", ui.pg2.con, true, false)
 	err = ui.app.SetRoot(ui.pages, true).Run()
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func printMenu(channels *Channels) (err error) {
 
 func (ui *UI) setupMainPage(channels *Channels) error {
 	// DisplayList
-	ui.pg1.win.AddItem(ui.pg1.displayList, 0, 1, true)
+	ui.pg1.con.AddItem(ui.pg1.displayList, 0, 1, true)
 	updateStreamInfo := func(ix int, pri, sec string, _ rune) {
 		var dataix []int = ui.pg1.streamList.FindItems(pri, sec, true, false)
 		add := func(c string) {
@@ -192,7 +192,7 @@ func (ui *UI) setupMainPage(channels *Channels) error {
 	ui.pg1.displayList.SetSecondaryTextColor(tcell.ColorDefault)
 	ui.pg1.displayList.SetTitle("Live Streams")
 	// StreamInfo
-	ui.pg1.win.AddItem(ui.pg1.streamInfo, 0, 4, false)
+	ui.pg1.con.AddItem(ui.pg1.streamInfo, 0, 4, false)
 	ui.pg1.streamInfo.SetBackgroundColor(tcell.ColorDefault)
 	ui.pg1.streamInfo.SetBorder(true)
 	ui.pg1.streamInfo.SetDynamicColors(true)
@@ -228,22 +228,12 @@ func (ui *UI) setupPopupPage() {
 			ui.pg1.displayList.AddItem(mainstr, secstr, 0, nil)
 		}
 	})
-	const PopupWidth = 26
-	ui.pg2.input.SetAcceptanceFunc(tview.InputFieldMaxLength(PopupWidth - 3))
-	// Left padding
-	ui.pg2.win.AddItem(nil, 0, 1, false)
-	// Center column, fixed width = PopupWidth
-	ui.pg2.win.AddItem(
-		tview.NewFlex().
-			SetDirection(tview.FlexRow).
-			// Top padding
-			AddItem(nil, 0, 1, false).
-			// Main content
-			AddItem(ui.pg2.input, 3, 1, true).
-			// Bottom padding
-			AddItem(nil, 0, 1, false),
-		PopupWidth, 1, true,
+	const (
+		PopupWidth  = 26
+		PopupHeight = 3
 	)
-	// Right padding
-	ui.pg2.win.AddItem(nil, 0, 1, false)
+	ui.pg2.input.SetAcceptanceFunc(tview.InputFieldMaxLength(PopupWidth - 3))
+	ui.pg2.con.SetColumns(0, PopupWidth, 0)
+	ui.pg2.con.SetRows(0, PopupHeight, 0)
+	ui.pg2.con.AddItem(ui.pg2.input, 1, 1, 1, 1, 0, 0, true)
 }
