@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 type Follows struct {
@@ -15,11 +14,10 @@ type Follows struct {
 }
 
 type FollowData struct {
-	FromID     string    `json:"from_id"`
-	FromName   string    `json:"from_name"`
-	ToID       string    `json:"to_id"`
-	ToName     string    `json:"to_name"`
-	FollowedAt time.Time `json:"followed_at"`
+	FromID   string `json:"from_id"`
+	FromName string `json:"from_name"`
+	ToID     string `json:"to_id"`
+	ToName   string `json:"to_name"`
 }
 
 type FollowPagination struct {

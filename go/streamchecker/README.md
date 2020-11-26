@@ -27,4 +27,6 @@ standard vim navigation: `jkl` or arrow keys + enter
 
 `f` to open a filter dialog
 
+`F` to clear filter
+
 `q` to quit

@@ -13,10 +13,11 @@ type Channels struct {
 }
 
 type StreamData struct {
-	UserName    string    `json:"user_name"`
-	GameID      string    `json:"game_id"`
-	Type        string    `json:"type"`
+	GameName    string    `json:"game_name"`
+	Language    string    `json:"language"`
 	Title       string    `json:"title"`
+	Type        string    `json:"type"`
+	UserName    string    `json:"user_name"`
 	ViewerCount int       `json:"viewer_count"`
 	StartedAt   time.Time `json:"started_at"`
 }
@@ -37,7 +38,9 @@ func (si *Channels) Swap(i, j int) {
 	si.Data[i], si.Data[j] = si.Data[j], si.Data[i]
 }
 
-func getLiveChannels(token, clientID string, follows *Follows, first int) (channelsPart string, err error) {
+func getLiveChannelsPart(token, clientID string, follows *Follows, first int) (
+	channelsPart string, err error,
+) {
 	req, err := http.NewRequest("GET", "https://api.twitch.tv/helix/streams", nil)
 	if err != nil {
 		return "", err
@@ -64,7 +67,7 @@ func getLiveChannels(token, clientID string, follows *Follows, first int) (chann
 }
 
 func initializeChannels(token, clientID string, follows *Follows) (channels *Channels, err error) {
-	jsonBody, err := getLiveChannels(token, clientID, follows, 0)
+	jsonBody, err := getLiveChannelsPart(token, clientID, follows, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +76,7 @@ func initializeChannels(token, clientID string, follows *Follows) (channels *Cha
 		return nil, err
 	}
 	for i := 100; i < follows.Total; i += 100 {
-		jsonBody, err = getLiveChannels(token, clientID, follows, i)
+		jsonBody, err = getLiveChannelsPart(token, clientID, follows, i)
 		if err != nil {
 			return nil, err
 		}

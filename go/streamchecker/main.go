@@ -34,11 +34,7 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 	sort.Sort(sort.Reverse(channels))
-	games, err := getGameInfo(tmptoken, clientID, channels)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	err = printMenu(games, channels)
+	err = printMenu(channels)
 	if err != nil {
 		log.Println(err.Error())
 		os.Exit(2)
