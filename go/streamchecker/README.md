@@ -29,4 +29,9 @@ standard vim navigation: `jkl` or arrow keys + enter
 
 `F` to clear filter
 
+filters starting with `!` shows only non-matching results
+
+filter window supports regular readline keys such as ctrl-u to clear, ctrl-a to
+go to beginning of line, ctrl-e to go to end of line etc
+
 `q` to quit

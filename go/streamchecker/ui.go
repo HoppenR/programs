@@ -164,6 +164,9 @@ func (ui *UI) setupMainPage(channels *Channels) error {
 			selChannel := channels.Data[dataix[0]]
 			startLocal := selChannel.StartedAt.Local()
 			selChannel.Title = tview.Escape(selChannel.Title)
+			if selChannel.GameName == "" {
+				selChannel.GameName = "[::d]None[::-]"
+			}
 			selChannel.Title = strings.ReplaceAll(selChannel.Title, "\n", " ")
 			add(fmt.Sprintf("[red]Title[-]: %s\n", selChannel.Title))
 			add(fmt.Sprintf("[red]Viewers[-]: %d\n", selChannel.ViewerCount))
@@ -210,6 +213,7 @@ func (ui *UI) setupPopupPage() {
 	ui.pg2.input.SetFinishedFunc(func(key tcell.Key) { ui.pages.HidePage("Popup") })
 	ui.pg2.input.SetChangedFunc(func(filter string) {
 		ui.pg1.displayList.Clear()
+		var invertfilter bool
 		if filter == "" {
 			for i := 0; i < ui.pg1.streamList.GetItemCount(); i++ {
 				mainstr, secstr := ui.pg1.streamList.GetItemText(i)
@@ -217,11 +221,29 @@ func (ui *UI) setupPopupPage() {
 			}
 			return
 		}
+		if filter[0] == '!' {
+			filter = filter[1:]
+			invertfilter = true
+		}
 		// TODO: maybe choose whether to filter pri or scd string?
+		// Maybe remake the filtering entirely to filter for different
+		// categories and/or to allow searching for other stream information
 		var ixs []int = ui.pg1.streamList.FindItems(filter, filter, false, true)
 		if ixs == nil {
 			ui.pg1.displayList.AddItem("", "", 0, nil)
 			return
+		}
+		if invertfilter {
+			var invixs []int
+			ixptr := 0
+			for i := 0; i < ui.pg1.streamList.GetItemCount(); i++ {
+				if i != ixs[ixptr] {
+					invixs = append(invixs, i)
+				} else if ixptr < len(ixs)-1 {
+					ixptr++
+				}
+			}
+			ixs = invixs
 		}
 		for _, v := range ixs {
 			mainstr, secstr := ui.pg1.streamList.GetItemText(v)
