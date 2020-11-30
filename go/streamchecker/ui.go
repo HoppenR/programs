@@ -70,8 +70,10 @@ func (ui *UI) inputHandler(event *tcell.EventKey) *tcell.EventKey {
 		case 'q':
 			ui.app.Stop()
 			return nil
+		case '/':
+			ui.pages.ShowPage("Popup")
 		}
-	case tcell.KeyEnter:
+	case tcell.KeyEnter, tcell.KeyCtrlJ:
 		primaryText, _ := ui.pg1.displayList.GetItemText(sel)
 		ui.openLink(primaryText)
 		return nil
@@ -94,7 +96,6 @@ func (ui *UI) openLink(userName string) {
 		printerr("set $BROWSER before opening links")
 		return
 	}
-	defer ui.app.Stop()
 	q := url.Values{
 		"channel": {strings.ToLower(userName)},
 		"parent":  {"strims.gg"},
@@ -108,7 +109,9 @@ func (ui *UI) openLink(userName string) {
 	err := cmd.Start()
 	if err != nil {
 		printerr("Error forking $BROWSER")
+		return
 	}
+	ui.app.Stop()
 }
 
 func printMenu(channels *Channels) (err error) {
@@ -200,6 +203,7 @@ func (ui *UI) setupMainPage(channels *Channels) error {
 	ui.pg1.streamInfo.SetBorder(true)
 	ui.pg1.streamInfo.SetDynamicColors(true)
 	ui.pg1.streamInfo.SetTitle("Stream Info")
+	ui.pg1.streamInfo.SetWrap(false)
 	return nil
 }
 
@@ -214,7 +218,7 @@ func (ui *UI) setupPopupPage() {
 	ui.pg2.input.SetChangedFunc(func(filter string) {
 		ui.pg1.displayList.Clear()
 		var invertfilter bool
-		if filter == "" {
+		if filter == "" || filter == "!" {
 			for i := 0; i < ui.pg1.streamList.GetItemCount(); i++ {
 				mainstr, secstr := ui.pg1.streamList.GetItemText(i)
 				ui.pg1.displayList.AddItem(mainstr, secstr, 0, nil)
@@ -234,16 +238,18 @@ func (ui *UI) setupPopupPage() {
 			return
 		}
 		if invertfilter {
-			var invixs []int
-			ixptr := 0
-			for i := 0; i < ui.pg1.streamList.GetItemCount(); i++ {
-				if i != ixs[ixptr] {
-					invixs = append(invixs, i)
-				} else if ixptr < len(ixs)-1 {
-					ixptr++
+			nItems := ui.pg1.streamList.GetItemCount()
+			nMatches := len(ixs)
+			newixs := make([]int, 0, nItems-nMatches)
+			next := 0
+			for i := 0; i < nItems; i++ {
+				if i != ixs[next] {
+					newixs = append(newixs, i)
+				} else if next < nMatches-1 {
+					next++
 				}
 			}
-			ixs = invixs
+			ixs = newixs
 		}
 		for _, v := range ixs {
 			mainstr, secstr := ui.pg1.streamList.GetItemText(v)
