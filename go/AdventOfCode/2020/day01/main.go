@@ -9,56 +9,51 @@ import (
 	"strconv"
 )
 
-const (
-	INPUTSZ = 200
-)
-
 func main() {
-	expenses, err := scanpayments("input")
+	expenses, lines, err := scanpayments("input")
 	if err != nil {
 		log.Fatal(err)
 	}
-	ans1, err := FindEntries(expenses, 2, 2020)
+	ans1, err := FindEntries(expenses, lines, 2, 2020)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("1: ", ans1)
-	ans2, err := FindEntries(expenses, 3, 2020)
+	ans2, err := FindEntries(expenses, lines, 3, 2020)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("2: ", ans2)
 }
 
-func scanpayments(filename string) ([]int, error) {
+func scanpayments(filename string) ([]int, int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
-	var expenses []int = make([]int, 0, INPUTSZ)
+	expenses := make([]int, 0)
+	var lines int
 	for scanner.Scan() {
 		payment, err := strconv.Atoi(scanner.Text())
 		if err != nil {
-			return nil, err
+			return nil, -1, err
 		}
 		expenses = append(expenses, payment)
+		lines++
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, -1, err
 	}
-	return expenses, nil
+	return expenses, lines, nil
 }
 
-func FindEntries(expenses []int, nints int, req int) (int, error) {
-	factorIxs := make([]int, 0, nints)
-	for i := 0; i < nints; i++ {
-		factorIxs = append(factorIxs, i)
-	}
+func FindEntries(expenses []int, lines, nints, req int) (int, error) {
+	factorIxs := make([]int, nints)
 	for true {
 		if Sum(factorIxs, expenses) != req {
-			if !AdvanceIxs(factorIxs) {
+			if !AdvanceIxs(factorIxs, lines) {
 				return 0, errors.New("Could not find numbers that sum up to 2020")
 			}
 		} else {
@@ -74,15 +69,15 @@ func FindEntries(expenses []int, nints int, req int) (int, error) {
 
 // Returns true if it was able to increase a number
 // starts at ixs[0] until it reaches NINTS, then increases ixs[1] by one and
-// starts over until ixs[0] is full again
-func AdvanceIxs(ixs []int) bool {
+// starts over until ixs[0] is full again, and so on
+func AdvanceIxs(ixs []int, lines int) bool {
 	var shouldadd bool = true
 	for i := 0; i < len(ixs); i++ {
-		if ixs[i] < INPUTSZ && shouldadd {
+		if ixs[i] < lines && shouldadd {
 			ixs[i]++
 			shouldadd = false
 		}
-		if ixs[i] >= INPUTSZ {
+		if ixs[i] >= lines {
 			if i == len(ixs)-1 {
 				return false
 			}
