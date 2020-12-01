@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"sort"
@@ -23,20 +24,34 @@ var (
 // hovered window
 func main() {
 	//TODO: validate the token and refresh as needed
-	var err error
-	log.SetFlags(log.Lshortfile)
-	follows, err := getAllFollows(tmptoken, clientID, userID)
-	if err != nil {
-		log.Fatalln(err.Error())
+	background := flag.Bool("b", false,
+		"Specify whether to check for streams in the background instead of interactively")
+	flag.Parse()
+
+	if *background {
+		log.Fatalln("Unimplemented background mode")
+		for true {
+			// get streams and save them every n interval
+			// compare to previous streams, notify-send changes
+		}
 	}
-	channels, err := initializeChannels(tmptoken, clientID, follows)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	sort.Sort(sort.Reverse(channels))
-	err = printMenu(channels)
-	if err != nil {
-		log.Println(err.Error())
-		os.Exit(2)
+
+	if !*background {
+		var err error
+		log.SetFlags(log.Lshortfile)
+		follows, err := getAllFollows(tmptoken, clientID, userID)
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+		channels, err := initializeChannels(tmptoken, clientID, follows)
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+		sort.Sort(sort.Reverse(channels))
+		err = printMenu(channels)
+		if err != nil {
+			log.Println(err.Error())
+			os.Exit(2)
+		}
 	}
 }
