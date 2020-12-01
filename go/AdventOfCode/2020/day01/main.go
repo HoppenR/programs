@@ -2,10 +2,15 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
+)
+
+const (
+	INPUTSZ = 200
 )
 
 func main() {
@@ -13,12 +18,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ans1, err := findsum(expenses, 2, 2020)
+	ans1, err := FindEntries(expenses, 2, 2020)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("1: ", ans1)
-	ans2, err := findsum(expenses, 3, 2020)
+	ans2, err := FindEntries(expenses, 3, 2020)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,7 +37,7 @@ func scanpayments(filename string) ([]int, error) {
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
-	var expenses []int = make([]int, 0, 200)
+	var expenses []int = make([]int, 0, INPUTSZ)
 	for scanner.Scan() {
 		payment, err := strconv.Atoi(scanner.Text())
 		if err != nil {
@@ -46,26 +51,52 @@ func scanpayments(filename string) ([]int, error) {
 	return expenses, nil
 }
 
-// TODO: rewrite
-func findsum(expenses []int, nints int, req int) (ans int, err error) {
-	// array of nints number of integers
-	// loop over all integers and add to array until filled
-	// When not right answer pop last and add 4th, 5th, 6th, when reaching last
-	// integer then pop (nints - 1)th and move 1 over, continue
-	for _, v := range expenses {
-		for _, w := range expenses {
-			if nints == 3 {
-				for _, t := range expenses {
-					if v+w+t == req {
-						return v * w * t, nil
-					}
-				}
-			} else {
-				if v+w == req {
-					return v * w, nil
-				}
+func FindEntries(expenses []int, nints int, req int) (int, error) {
+	factorIxs := make([]int, 0, nints)
+	for i := 0; i < nints; i++ {
+		factorIxs = append(factorIxs, i)
+	}
+	for true {
+		if Sum(factorIxs, expenses) != req {
+			if !AdvanceIxs(factorIxs) {
+				return 0, errors.New("Could not find numbers that sum up to 2020")
 			}
+		} else {
+			var sum int = 1
+			for i := 0; i < len(factorIxs); i++ {
+				sum *= expenses[factorIxs[i]]
+			}
+			return sum, nil
 		}
 	}
-	return 0, fmt.Errorf("Could not find %d numbers that sum up to 2020", nints)
+	panic("oh fug")
+}
+
+// Returns true if it was able to increase a number
+// starts at ixs[0] until it reaches NINTS, then increases ixs[1] by one and
+// starts over until ixs[0] is full again
+func AdvanceIxs(ixs []int) bool {
+	var shouldadd bool = true
+	for i := 0; i < len(ixs); i++ {
+		if ixs[i] < INPUTSZ && shouldadd {
+			ixs[i]++
+			shouldadd = false
+		}
+		if ixs[i] >= INPUTSZ {
+			if i == len(ixs)-1 {
+				return false
+			}
+			ixs[i] = 0
+			shouldadd = true
+		}
+	}
+	return true
+}
+
+func Sum(ixs []int, expenses []int) int {
+	var sum int
+	for i := 0; i < len(ixs); i++ {
+		sum += expenses[ixs[i]]
+	}
+	return sum
 }
