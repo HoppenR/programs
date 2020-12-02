@@ -17,7 +17,7 @@ type Policy struct {
 }
 
 func main() {
-	policies, err := scanpolicies("input")
+	policies, err := ReadPolicies("input")
 	if err != nil {
 		log.Fatalln("couldnt get lines from file")
 	}
@@ -25,7 +25,7 @@ func main() {
 	fmt.Println("2: ", CountValid(policies, 2))
 }
 
-func scanpolicies(filename string) ([]Policy, error) {
+func ReadPolicies(filename string) ([]Policy, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
