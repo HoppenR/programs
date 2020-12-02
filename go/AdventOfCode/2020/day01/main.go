@@ -18,12 +18,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("1: ", ans1)
+	fmt.Println("1:", ans1)
 	ans2, err := FindEntries(expenses, 3, 2020)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("2: ", ans2)
+	fmt.Println("2:", ans2)
 }
 
 func ReadPayments(filename string) ([]int, error) {

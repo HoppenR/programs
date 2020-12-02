@@ -21,8 +21,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("couldnt get lines from file")
 	}
-	fmt.Println("1: ", CountValid(policies, 1))
-	fmt.Println("2: ", CountValid(policies, 2))
+	fmt.Println("1:", CountValid(policies, 1))
+	fmt.Println("2:", CountValid(policies, 2))
 }
 
 func ReadPolicies(filename string) ([]Policy, error) {

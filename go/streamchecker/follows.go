@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"fmt"
 )
 
 type Follows struct {
@@ -42,6 +43,9 @@ func getFollowsPart(token, clientID, userID, pagCursor string) (followsPart stri
 	query.Add("after", pagCursor)
 	req.URL.RawQuery = query.Encode()
 	resp, err := http.DefaultClient.Do(req)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("%s: %d", "Got responsecode", resp.StatusCode)
+	}
 	if err != nil {
 		return "", err
 	}
