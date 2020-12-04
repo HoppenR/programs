@@ -1,11 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -171,41 +170,18 @@ func ValidatePassports(passports []map[string]string, ruleset int) int {
 }
 
 func ReadPassports(filename string) ([]map[string]string, error) {
-	file, err := os.Open(filename)
+	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-	lScan := bufio.NewScanner(file)
 	passports := make([]map[string]string, 0)
-	for true {
-		p := make(map[string]string)
-		if !lScan.Scan() {
-			break
+	for _, pstr := range strings.Split(string(content), "\n\n") {
+		pass := make(map[string]string)
+		for _, f := range strings.Fields(pstr) {
+			kv := strings.Split(f, ":")
+			pass[kv[0]] = kv[1]
 		}
-		var line string = lScan.Text()
-		for lScan.Scan() {
-			content := lScan.Text()
-			if content == "" {
-				break
-			}
-			line += " " + content
-		}
-		for true {
-			var fldStrt, valEnd int
-			fldStrt = strings.IndexRune(line, ':')
-			valEnd = strings.IndexRune(line, ' ')
-			if valEnd < 0 {
-				p[line[0:fldStrt]] = line[fldStrt+1:]
-				break
-			}
-			p[line[0:fldStrt]] = line[fldStrt+1 : valEnd]
-			line = line[valEnd+1:]
-		}
-		passports = append(passports, p)
-	}
-	if err := lScan.Err(); err != nil {
-		return nil, err
+		passports = append(passports, pass)
 	}
 	return passports, nil
 }
