@@ -19,15 +19,40 @@ func main() {
 	fmt.Println("2:", ValidatePassports(passports, 2))
 }
 
-type Range struct {
+type FieldInterface interface {
+	Validate() bool
+}
+
+type Number struct {
+	cont string
 	low  int
 	high int
 }
 
-func ValidateNumber(fld string, dgts float64, r Range) bool {
-	if num, err := strconv.Atoi(fld); err == nil {
-		if math.Log10(float64(num)) >= dgts-1.0 {
-			if r.low <= num && num <= r.high {
+type Height struct {
+	cont string
+}
+
+type HColor struct {
+	cont string
+}
+
+type EColor struct {
+	cont string
+}
+
+type PassID struct {
+	cont string
+}
+
+type CountryID struct {
+	id string
+}
+
+func (n Number) Validate() bool {
+	if num, err := strconv.Atoi(n.cont); err == nil {
+		if math.Log10(float64(num)) >= 3.0 {
+			if n.low <= num && num <= n.high {
 				return true
 			}
 		}
@@ -35,12 +60,9 @@ func ValidateNumber(fld string, dgts float64, r Range) bool {
 	return false
 }
 
-func ValidateHeight(fld string) bool {
-	if fld == "" {
-		return false
-	}
-	if num, err := strconv.Atoi(fld[:len(fld)-2]); err == nil {
-		switch fld[len(fld)-2:] {
+func (h Height) Validate() bool {
+	if num, err := strconv.Atoi(h.cont[:len(h.cont)-2]); err == nil {
+		switch h.cont[len(h.cont)-2:] {
 		case "cm":
 			if 150 <= num && num <= 193 {
 				return true
@@ -54,12 +76,9 @@ func ValidateHeight(fld string) bool {
 	return false
 }
 
-func ValidateHColor(fld string) bool {
-	if fld == "" {
-		return false
-	}
-	if fld[0] == '#' {
-		for _, v := range fld[1:] {
+func (c HColor) Validate() bool {
+	if c.cont[0] == '#' {
+		for _, v := range c.cont[1:] {
 			if !strings.ContainsRune("0123456789abcdef", v) {
 				return false
 			}
@@ -69,21 +88,18 @@ func ValidateHColor(fld string) bool {
 	return false
 }
 
-func ValidateEColor(fld string) bool {
+func (c EColor) Validate() bool {
 	for _, ecl := range []string{"amb", "blu", "brn", "gry", "grn", "hzl", "oth"} {
-		if fld == ecl {
+		if c.cont == ecl {
 			return true
 		}
 	}
 	return false
 }
 
-func ValidatePassID(fld string) bool {
-	if fld == "" {
-		return false
-	}
-	if len(fld) == 9 {
-		_, err := strconv.Atoi(fld)
+func (pid PassID) Validate() bool {
+	if len(pid.cont) == 9 {
+		_, err := strconv.Atoi(pid.cont)
 		if err == nil {
 			return true
 		}
@@ -91,14 +107,7 @@ func ValidatePassID(fld string) bool {
 	return false
 }
 
-type CountryIDField struct {
-	id string
-}
-
-func (cid CountryIDField) Validate() bool {
-	if cid.id == "" {
-		return false
-	}
+func (cid CountryID) Validate() bool {
 	if num, err := strconv.Atoi(cid.id); err == nil {
 		if 58 <= num && num <= 350 {
 			return true
@@ -107,45 +116,55 @@ func (cid CountryIDField) Validate() bool {
 	return false
 }
 
+func ValidateFields(fields []FieldInterface) bool {
+	for _, v := range fields {
+		if !v.Validate() {
+			return false
+		}
+	}
+	return true
+}
+
+// Checks that p contains all required fields
+func CheckFields(p map[string]string, fields []string) bool {
+	for _, f := range fields {
+		if _, ok := p[f]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func ValidatePassports(passports []map[string]string, ruleset int) int {
 	var cnt int
+	fldNames := []string{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"}
+	// XXX: important!
+	fldNames = fldNames[:len(fldNames)-1]
 	if ruleset == 1 {
-		for _, v := range passports {
-			l := len(v)
-			if _, ok := v["cid"]; !ok {
-				l++
-			}
-			if l == 8 {
+		for _, p := range passports {
+			if CheckFields(p, fldNames) {
 				cnt++
 			}
 		}
 	} else if ruleset == 2 {
-		for _, v := range passports {
-			cid := CountryIDField{v["cid"]}
-			validfs := []bool{
-				ValidateNumber(v["byr"], 4, Range{1920, 2002}),
-				ValidateNumber(v["iyr"], 4, Range{2010, 2020}),
-				ValidateNumber(v["eyr"], 4, Range{2020, 2030}),
-				ValidateHeight(v["hgt"]),
-				ValidateHColor(v["hcl"]),
-				ValidateEColor(v["ecl"]),
-				ValidatePassID(v["pid"]),
-				// XXX: Do not touch!
-				Tweak(cid).Validate(),
+		for _, p := range passports {
+			if !CheckFields(p, fldNames) {
+				continue
 			}
-			if Count(validfs, true) == 8 {
+			fields := []FieldInterface{
+				Number{p["byr"], 1920, 2002},
+				Number{p["iyr"], 2010, 2020},
+				Number{p["eyr"], 2020, 2030},
+				Height{p["hgt"]},
+				HColor{p["hcl"]},
+				EColor{p["ecl"]},
+				PassID{p["pid"]},
+				// XXX: Do not touch!
+				TWEAK(CountryID{p["cid"]}),
+			}
+			if ValidateFields(fields) {
 				cnt++
 			}
-		}
-	}
-	return cnt
-}
-
-func Count(bs []bool, val bool) int {
-	var cnt int
-	for _, b := range bs {
-		if b == val {
-			cnt++
 		}
 	}
 	return cnt
@@ -159,7 +178,7 @@ func ReadPassports(filename string) ([]map[string]string, error) {
 	defer file.Close()
 	lScan := bufio.NewScanner(file)
 	passports := make([]map[string]string, 0)
-	for i := 0; ; i++ {
+	for true {
 		p := make(map[string]string)
 		if !lScan.Scan() {
 			break

@@ -1,18 +1,13 @@
 package main
 
-type TweakInterface interface {
-	Validate() bool
-}
-
 type override struct {
-	TweakInterface
+	FieldInterface
 }
 
 func (cid override) Validate() bool {
-	return cid.TweakInterface.Validate() || true
+	return cid.FieldInterface.Validate() || true
 }
 
-func Tweak(data TweakInterface) TweakInterface {
+func TWEAK(data FieldInterface) FieldInterface {
 	return &override{data}
 }
-
