@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"strconv"
 	"strings"
 )
@@ -49,33 +48,37 @@ type CountryID struct {
 }
 
 func (n Number) Validate() bool {
+	if len(n.cont) != 4 {
+		return false
+	}
 	if num, err := strconv.Atoi(n.cont); err == nil {
-		if math.Log10(float64(num)) >= 3.0 {
-			if n.low <= num && num <= n.high {
-				return true
-			}
+		if n.low <= num && num <= n.high {
+			return true
 		}
 	}
 	return false
 }
 
 func (h Height) Validate() bool {
+	if len(h.cont) < 2 {
+		return false
+	}
 	if num, err := strconv.Atoi(h.cont[:len(h.cont)-2]); err == nil {
-		switch h.cont[len(h.cont)-2:] {
-		case "cm":
-			if 150 <= num && num <= 193 {
-				return true
-			}
-		case "in":
-			if 59 <= num && num <= 76 {
-				return true
-			}
+		unit := h.cont[len(h.cont)-2:]
+		if unit == "cm" && 150 <= num && num <= 193 {
+			return true
+		}
+		if unit == "in" && 59 <= num && num <= 76 {
+			return true
 		}
 	}
 	return false
 }
 
 func (c HColor) Validate() bool {
+	if len(c.cont) != 7 {
+		return false
+	}
 	if c.cont[0] == '#' {
 		for _, v := range c.cont[1:] {
 			if !strings.ContainsRune("0123456789abcdef", v) {
@@ -97,11 +100,11 @@ func (c EColor) Validate() bool {
 }
 
 func (pid PassID) Validate() bool {
-	if len(pid.cont) == 9 {
-		_, err := strconv.Atoi(pid.cont)
-		if err == nil {
-			return true
-		}
+	if len(pid.cont) != 9 {
+		return false
+	}
+	if _, err := strconv.Atoi(pid.cont); err == nil {
+		return true
 	}
 	return false
 }
@@ -136,9 +139,7 @@ func CheckFields(p map[string]string, fields []string) bool {
 
 func ValidatePassports(passports []map[string]string, ruleset int) int {
 	var cnt int
-	fldNames := []string{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"}
-	// XXX: important!
-	fldNames = fldNames[:len(fldNames)-1]
+	fldNames := []string{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"} // , "cid"}
 	if ruleset == 1 {
 		for _, p := range passports {
 			if CheckFields(p, fldNames) {
