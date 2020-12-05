@@ -31,26 +31,22 @@ func GetHighestPassID(passes []string) int {
 	return highest
 }
 
-func BinaryHop(p string, highch, lowch rune, high float64) float64 {
-	low := 0.0
-	for _, c := range p {
-		mid := low + ((high - low) / 2)
+func DecodeBinary(p string, highch rune) int {
+	ans := 0.0
+	for i, c := range p {
 		if c == highch {
-			low = math.Ceil(mid)
-		} else if c == lowch {
-			high = math.Floor(mid)
+			ans += math.Pow(2, float64(len(p)-i-1))
 		}
 	}
-	return high
+	return int(ans)
 }
 
 func DecodePass(p string) int {
 	cutoff := strings.IndexAny(p, "RL")
-	BFHigh := math.Pow(2, float64(cutoff))
 	RLHigh := math.Pow(2, float64(len(p)-cutoff))
-	row := BinaryHop(p[:cutoff], 'B', 'F', BFHigh-1.0)
-	col := BinaryHop(p[cutoff:], 'R', 'L', RLHigh-1.0)
-	return int(row*RLHigh + col)
+	row := DecodeBinary(p[:cutoff], 'B')
+	col := DecodeBinary(p[cutoff:], 'R')
+	return row*int(RLHigh) + col
 }
 
 func FindMissingID(passes []string) (int, error) {
