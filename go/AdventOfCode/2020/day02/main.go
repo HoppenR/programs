@@ -20,7 +20,7 @@ const (
 func main() {
 	policies, err := ReadPolicies("input")
 	if err != nil {
-		log.Fatalln("couldnt get lines from file")
+		log.Fatalln(err)
 	}
 	fmt.Println("1:", CountValid(policies, 1))
 	fmt.Println("2:", CountValid(policies, 2))

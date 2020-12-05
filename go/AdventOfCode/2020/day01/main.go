@@ -12,11 +12,11 @@ import (
 func main() {
 	expenses, err := ReadPayments("input")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	ans1, err := FindEntries(expenses, 2, 2020)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	fmt.Println("1:", ans1)
 	ans2, err := FindEntries(expenses, 3, 2020)
@@ -62,7 +62,7 @@ func FindEntries(expenses []int, nints, req int) (int, error) {
 			return sum, nil
 		}
 	}
-	panic("oh fug")
+	return 0, fmt.Errorf("Unreachable code")
 }
 
 // Returns true if it was able to increase a number
