@@ -12,10 +12,9 @@ func TestPart1(t *testing.T) {
 }
 
 func TestPart2(t *testing.T) {
-	smolPlanePasses := []string{"FFFFFFFRRR", "FFFFFFBLLL", "FFFFFFBLLR",
-		"FFFFFFBLRL", "FFFFFFBLRR", "FFFFFFBRLL", "FFFFFFBRLR", "FFFFFFBRRL",
-		"FFFFFFBRRR", "FFFFFBFLLL", "FFFFFBFLLR", "FFFFFBFLRR", "FFFFFBFRLL",
-		"FFFFFBFRLR", "FFFFFBFRRL", "FFFFFBFRRR", "FFFFFBBLLL", "FFFFFBBLLR"}
+	smolPlanePasses := []string{"FFBRR", "FBFLL", "FBFLR", "FBFRL", "FBFRR",
+		"FBBLL", "FBBLR", "FBBRL", "FBBRR", "BFFLL", "BFFLR", "BFFRR", "BFBLL",
+		"BFBLR", "BFBRL", "BFBRR", "BBFLL", "BBFLR"}
 	ans, err := FindMissingID(smolPlanePasses)
 	assert.Nil(t, err)
 	assert.Equal(t, 18, ans)

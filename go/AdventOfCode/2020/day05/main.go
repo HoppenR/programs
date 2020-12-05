@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"sort"
 	"strings"
 )
 
@@ -21,43 +22,33 @@ func main() {
 	fmt.Println("2:", ans2)
 }
 
-func GetHighestPassID(passes []string) int {
-	var highest int = 0
+func GetHighestPassID(passes []string) (highest int) {
 	for _, p := range passes {
 		if pid := DecodePass(p); pid > highest {
 			highest = pid
 		}
 	}
-	return highest
+	return
 }
 
-func DecodeBinary(p string, highch rune) int {
-	ans := 0.0
+func DecodePass(p string) (pid int) {
 	for i, c := range p {
-		if c == highch {
-			ans += math.Pow(2, float64(len(p)-i-1))
+		if strings.IndexRune("BR", c) >= 0 {
+			pid += int(math.Pow(2, float64(len(p)-i-1)))
 		}
 	}
-	return int(ans)
-}
-
-func DecodePass(p string) int {
-	cutoff := strings.IndexAny(p, "RL")
-	RLHigh := math.Pow(2, float64(len(p)-cutoff))
-	row := DecodeBinary(p[:cutoff], 'B')
-	col := DecodeBinary(p[cutoff:], 'R')
-	return row*int(RLHigh) + col
+	return
 }
 
 func FindMissingID(passes []string) (int, error) {
-	highest := GetHighestPassID(passes)
-	occupiedIDs := make([]bool, highest+1)
+	var occupiedIDs []int
 	for _, p := range passes {
-		occupiedIDs[DecodePass(p)] = true
+		occupiedIDs = append(occupiedIDs, DecodePass(p))
 	}
-	for i := 0; i < highest-2; i++ {
-		if occupiedIDs[i+2] && !occupiedIDs[i+1] && occupiedIDs[i] {
-			return i + 1, nil
+	sort.IntSlice.Sort(occupiedIDs)
+	for i := 0; i < len(occupiedIDs)-1; i++ {
+		if occupiedIDs[i]+2 == occupiedIDs[i+1] {
+			return occupiedIDs[i] + 1, nil
 		}
 	}
 	return 0, fmt.Errorf("Couldn't find an unoccupied spot between two occupied ones")
