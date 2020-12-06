@@ -86,8 +86,7 @@ func AdvanceIxs(ixs []int, lines int) bool {
 	return true
 }
 
-func Sum(ixs []int, expenses []int) int {
-	var sum int
+func Sum(ixs []int, expenses []int) (sum int) {
 	for i := 0; i < len(ixs); i++ {
 		sum += expenses[ixs[i]]
 	}

@@ -29,13 +29,11 @@ func CountGroupScore(f string, ruleset int) (cnt int) {
 	} else if ruleset == 2 {
 		f = strings.TrimSuffix(f, "\n")
 		respondents := strings.Count(f, "\n") + 1
-		f = strings.ReplaceAll(f, "\n", "")
-		for i := 0; i < len(f); i++ {
-			c := string(f[i])
-			if strings.Count(f, c) == respondents {
+		for len(f) > 0 {
+			prevLen := len(f)
+			f = strings.ReplaceAll(f, string(f[0]), "")
+			if prevLen - len(f) == respondents {
 				cnt++
-				f = strings.ReplaceAll(f, c, "")
-				i -= 1
 			}
 		}
 	}

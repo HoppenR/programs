@@ -36,8 +36,7 @@ func ReadPolicies(filename string) ([][][]byte, error) {
 	return matches, nil
 }
 
-func CountValid(matches [][][]byte, ruleset int) int {
-	var nValid int
+func CountValid(matches [][][]byte, ruleset int) (nValid int) {
 	if ruleset == 1 {
 		for _, m := range matches {
 			lo, _ := strconv.Atoi(string(m[low]))
@@ -56,5 +55,5 @@ func CountValid(matches [][][]byte, ruleset int) int {
 			}
 		}
 	}
-	return nValid
+	return
 }

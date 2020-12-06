@@ -137,8 +137,7 @@ func CheckFields(p map[string]string, fields []string) bool {
 	return true
 }
 
-func ValidatePassports(passports []map[string]string, ruleset int) int {
-	var cnt int
+func ValidatePassports(passports []map[string]string, ruleset int) (cnt int) {
 	fldNames := []string{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"} // , "cid"}
 	if ruleset == 1 {
 		for _, p := range passports {

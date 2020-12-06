@@ -10,7 +10,7 @@ var exampleForms = []string{
 	"a\nb\nc",
 	"ab\nac",
 	"a\na\na\na",
-	"b",
+	"b\n",
 }
 
 func TestPart1(t *testing.T) {
