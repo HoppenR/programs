@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"sort"
 	"strings"
 )
@@ -34,7 +33,7 @@ func GetHighestPassID(passes []string) (highest int) {
 func DecodePass(p string) (pid int) {
 	for i, c := range p {
 		if strings.IndexRune("BR", c) >= 0 {
-			pid += int(math.Pow(2, float64(len(p)-i-1)))
+			pid += 1 << (len(p) - i - 1)
 		}
 	}
 	return
