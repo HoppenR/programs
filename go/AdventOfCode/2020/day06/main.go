@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+
+	"github.com/scylladb/go-set/i32set"
 )
 
 func main() {
@@ -16,42 +18,30 @@ func main() {
 	fmt.Println("2:", SumCounts(forms, 2))
 }
 
-func CountGroupScore(f string, ruleset int) (cnt int) {
-	if ruleset == 1 {
-		f = strings.ReplaceAll(f, "\n", "")
-		answers := make(map[rune]bool)
-		for _, c := range f {
-			if _, ok := answers[c]; !ok {
-				cnt++
-				answers[c] = true
-			}
-		}
-	} else if ruleset == 2 {
-		f = strings.TrimSuffix(f, "\n")
-		respondents := strings.Count(f, "\n") + 1
-		for len(f) > 0 {
-			prevLen := len(f)
-			f = strings.ReplaceAll(f, string(f[0]), "")
-			if prevLen - len(f) == respondents {
-				cnt++
-			}
+func SumCounts(groups [][]*i32set.Set, ruleset int) (cnt int) {
+	for _, g := range groups {
+		if ruleset == 1 {
+			cnt += i32set.Union(g...).Size()
+		} else if ruleset == 2 {
+			cnt += i32set.Intersection(g...).Size()
 		}
 	}
 	return
 }
 
-func SumCounts(forms []string, ruleset int) (cnt int) {
-	for _, f := range forms {
-		cnt += CountGroupScore(f, ruleset)
-	}
-	return
-}
-
-func ReadPassports(filename string) ([]string, error) {
+func ReadPassports(filename string) ([][]*i32set.Set, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	forms := strings.Split(string(content), "\n\n")
-	return forms, nil
+	trimmed := strings.TrimRight(string(content), "\n")
+	var groups [][]*i32set.Set
+	for _, g := range strings.Split(trimmed, "\n\n") {
+		var fields []*i32set.Set
+		for _, f := range strings.Split(g, "\n") {
+			fields = append(fields, i32set.New([]int32(f)...))
+		}
+		groups = append(groups, fields)
+	}
+	return groups, nil
 }

@@ -1,16 +1,18 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/scylladb/go-set/i32set"
+	"github.com/stretchr/testify/assert"
 )
 
-var exampleForms = []string{
-	"abc",
-	"a\nb\nc",
-	"ab\nac",
-	"a\na\na\na",
-	"b\n",
+var exampleForms = [][]*i32set.Set{
+	{i32set.New([]int32("abc")...)},
+	{i32set.New('a'), i32set.New('b'), i32set.New('c')},
+	{i32set.New([]int32("ab")...), i32set.New([]int32("ac")...)},
+	{i32set.New('a'), i32set.New('a'), i32set.New('a'), i32set.New('a')},
+	{i32set.New('b')},
 }
 
 func TestPart1(t *testing.T) {
