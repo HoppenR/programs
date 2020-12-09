@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -50,7 +51,7 @@ func FindMissingID(passes []string) (int, error) {
 			return occupiedIDs[i] + 1, nil
 		}
 	}
-	return 0, fmt.Errorf("Couldn't find an unoccupied spot between two occupied ones")
+	return 0, errors.New("Couldn't find an unoccupied spot between two occupied ones")
 }
 
 func ReadLines(filename string) ([]string, error) {

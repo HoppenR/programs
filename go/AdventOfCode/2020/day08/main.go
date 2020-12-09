@@ -66,7 +66,7 @@ func FindFaultyInstr(prg []Instr) (acc, error) {
 		FlipInstr(prg, i)
 		a, p := TryRun(prg)
 		FlipInstr(prg, i)
-		if int(p) >= len(prg) {
+		if int(p) == len(prg) {
 			return a, nil
 		}
 	}

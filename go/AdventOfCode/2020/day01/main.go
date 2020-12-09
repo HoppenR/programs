@@ -49,7 +49,7 @@ func ReadPayments(filename string) ([]int, error) {
 
 func FindEntries(expenses []int, nints, req int) (int, error) {
 	factorIxs := make([]int, nints)
-	for true {
+	for {
 		if Sum(factorIxs, expenses) != req {
 			if !AdvanceIxs(factorIxs, len(expenses)) {
 				return 0, errors.New("Could not find numbers that sum up to 2020")
@@ -62,7 +62,6 @@ func FindEntries(expenses []int, nints, req int) (int, error) {
 			return sum, nil
 		}
 	}
-	return 0, fmt.Errorf("Unreachable code")
 }
 
 // Returns true if it was able to increase a number
