@@ -19,9 +19,9 @@ var exampleBoard = [][]byte{
 }
 
 func TestPart1(t *testing.T) {
-	assert.Equal(t, 37, FindStagnation(exampleBoard))
+	assert.Equal(t, 37, FindStagnation(exampleBoard, 1))
 }
 
 func TestPart2(t *testing.T) {
-	assert.Equal(t, 0, func() int { return 0 }())
+	assert.Equal(t, 26, FindStagnation(exampleBoard, 2))
 }
