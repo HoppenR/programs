@@ -20,7 +20,6 @@ var examplePrg = []Instr{
 func TestPart1(t *testing.T) {
 	a, _ := TryRun(examplePrg)
 	assert.Equal(t, acc(5), a)
-	ResetSeen(examplePrg)
 }
 
 func TestPart2(t *testing.T) {
