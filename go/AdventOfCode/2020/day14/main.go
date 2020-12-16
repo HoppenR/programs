@@ -10,13 +10,13 @@ import (
 )
 
 type WriteOp struct {
-	addr uint64
-	val  uint64
+	adr uint64
+	val uint64
 }
 
 type Routine struct {
-	bitmask string
-	writes  []WriteOp
+	mask   string
+	writes []WriteOp
 }
 
 func main() {
@@ -24,30 +24,62 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("1:", RunProgram(program))
+	fmt.Println("1:", RunProgram(program, 1))
+	fmt.Println("2:", RunProgram(program, 2))
 }
 
-func RunProgram(program []Routine) uint64 {
-	memory := make(map[uint64]uint64)
+func RunProgram(program []Routine, ruleset int) (sum uint64) {
+	mem := make(map[uint64]uint64)
 	for _, r := range program {
 		for _, w := range r.writes {
-			for bit := range r.bitmask {
-				var mask uint64 = 1 << (len(r.bitmask) - 1 - bit)
-				switch r.bitmask[bit] {
-				case '0':
-					w.val &= ^mask
-				case '1':
-					w.val |= mask
+			// Set up the masked value
+			for i := range r.mask {
+				// value with 1 bit set
+				var bit uint64 = 1 << (len(r.mask) - 1 - i)
+				if ruleset == 1 {
+					// mask the value with 0s and 1s
+					switch r.mask[i] {
+					case '0':
+						w.val &= ^bit
+					case '1':
+						w.val |= bit
+					}
+				} else if ruleset == 2 {
+					// mask the address with 1s
+					if r.mask[i] == '1' {
+						w.adr |= bit
+					}
 				}
 			}
-			memory[w.addr] = w.val
+			// Apply the masked value
+			if ruleset == 1 {
+				mem[w.adr] = w.val
+			} else if ruleset == 2 {
+				WriteCombAdrs(mem, r.mask, w, 0)
+			}
 		}
 	}
-	var sum uint64
-	for _, v := range memory {
+	for _, v := range mem {
 		sum += v
 	}
-	return sum
+	return
+}
+
+func WriteCombAdrs(mem map[uint64]uint64, mask string, w WriteOp, ix int) {
+	if ix == 36 {
+		return
+	}
+	var bit uint64 = 1 << (len(mask) - 1 - ix)
+	if mask[ix] == 'X' {
+		w.adr |= bit
+		mem[w.adr] = w.val
+		WriteCombAdrs(mem, mask, w, ix+1)
+		w.adr &= ^bit
+		mem[w.adr] = w.val
+		WriteCombAdrs(mem, mask, w, ix+1)
+	} else {
+		WriteCombAdrs(mem, mask, w, ix+1)
+	}
 }
 
 func ReadProgram(filename string) ([]Routine, error) {
@@ -58,9 +90,9 @@ func ReadProgram(filename string) ([]Routine, error) {
 	program := make([]Routine, 0)
 	pattern := regexp.MustCompile(`mem\[(\d+)\] = (\d+)`)
 	for _, sec := range strings.Split(string(content), "mask = ")[1:] {
-		lines := strings.Split(strings.TrimRight(sec, "\n"), "\n")
-		var rout Routine
-		rout.bitmask = lines[0]
+		trimsec := strings.TrimRight(sec, "\n")
+		lines := strings.Split(trimsec, "\n")
+		var rout = Routine{mask: lines[0], writes: make([]WriteOp, 0)}
 		for _, l := range lines[1:] {
 			groups := pattern.FindStringSubmatch(l)
 			mem, err := strconv.ParseUint(groups[1], 10, 36)
