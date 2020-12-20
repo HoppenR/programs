@@ -11,6 +11,7 @@ type Cube struct {
 	x int
 	y int
 	z int
+	w int
 }
 
 type ActiveCubes = map[Cube]struct{}
@@ -22,18 +23,19 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("1:", BootSource(source))
+	fmt.Println("1:", BootSource(source, 3))
+	fmt.Println("2:", BootSource(source, 4))
 }
 
-func BootSource(source ActiveCubes) int {
+func BootSource(source ActiveCubes, dimensions int) int {
 	bootCycles := 6
 	for i := 0; i < bootCycles; i++ {
-		source = NextState(source)
+		source = NextState(source, dimensions)
 	}
 	return len(source)
 }
 
-func NextState(sourceC ActiveCubes) ActiveCubes {
+func NextState(sourceC ActiveCubes, dimensions int) ActiveCubes {
 	sourceN := make(ActiveCubes, 0)
 	candidates := make(map[Cube]int, 0)
 	for c := range sourceC {
@@ -49,7 +51,13 @@ func NextState(sourceC ActiveCubes) ActiveCubes {
 		for x := c.x - 1; x <= c.x+1; x++ {
 			for y := c.y - 1; y <= c.y+1; y++ {
 				for z := c.z - 1; z <= c.z+1; z++ {
-					candidates[Cube{x, y, z}]++
+					if dimensions == 3 {
+						candidates[Cube{x, y, z, 0}]++
+					} else if dimensions == 4 {
+						for w := c.w - 1; w <= c.w+1; w++ {
+							candidates[Cube{x, y, z, w}]++
+						}
+					}
 				}
 			}
 		}
@@ -68,7 +76,8 @@ func NextState(sourceC ActiveCubes) ActiveCubes {
 func IsClose(c Cube, oc Cube) bool {
 	if IntAbs(c.x-oc.x) > 1 ||
 		IntAbs(c.y-oc.y) > 1 ||
-		IntAbs(c.z-oc.z) > 1 {
+		IntAbs(c.z-oc.z) > 1 ||
+		IntAbs(c.w-oc.w) > 1 {
 		return false
 	} else {
 		return true
@@ -93,7 +102,7 @@ func ReadLines(filename string) (ActiveCubes, error) {
 	for y := 0; y < len(lines); y++ {
 		for x := 0; x < len(lines[y]); x++ {
 			if lines[y][x] == '#' {
-				board[Cube{x, y, 0}] = Active
+				board[Cube{x, y, 0, 0}] = Active
 			}
 		}
 	}
