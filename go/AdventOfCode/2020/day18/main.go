@@ -14,35 +14,64 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("1:", EvalFile(numbers))
+	fmt.Println("1:", EvalFile(numbers, false))
+	fmt.Println("2:", EvalFile(numbers, true))
 }
 
 var pattern = regexp.MustCompile(`(\([^()]+\))`)
+var addpattern = regexp.MustCompile(`(\d+\+\d+)`)
 
-func EvalFile(numbers [][]byte) (sum int) {
-	for _, l := range numbers {
-		sum += EvalLine(l)
+func EvalFile(numbers [][]byte, plus bool) (sum int) {
+	numcpy := make([][]byte, len(numbers))
+	for i := range numcpy {
+		numcpy[i] = make([]byte, len(numbers[i]))
+		copy(numcpy[i], numbers[i])
+	}
+	for _, l := range numcpy {
+		sum += EvalLine(l, plus)
 	}
 	return
 }
 
-func EvalLine(line []byte) int {
-	var running = true
-	for running {
+func EvalLine(line []byte, plus bool) (sum int) {
+	for {
 		ixs := pattern.FindSubmatchIndex(line)
 		if ixs != nil {
-			q := append(line[:ixs[0]], EvalExpr(line[ixs[0]+1:ixs[1]-1])...)
+			var q []byte
+			if !plus {
+				q = append(line[:ixs[0]], EvalExpr(line[ixs[0]+1:ixs[1]-1])...)
+			} else {
+				q = append(line[:ixs[0]], EvalExprPlus(line[ixs[0]+1:ixs[1]-1])...)
+			}
 			line = append(q, line[ixs[1]:]...)
 		} else {
-			running = false
 			break
 		}
 	}
-	sum, err := strconv.Atoi(string(EvalExpr(line)))
+	var err error
+	if !plus {
+		sum, err = strconv.Atoi(string(EvalExpr(line)))
+	} else {
+		sum, err = strconv.Atoi(string(EvalExprPlus(line)))
+	}
 	if err != nil {
 		panic(err)
 	}
 	return sum
+}
+
+// Explicitly calls EvalExpr with all additions before evaluaing as normal
+func EvalExprPlus(line []byte) []byte {
+	for {
+		ixs := addpattern.FindSubmatchIndex(line)
+		if ixs != nil {
+			q := append(line[:ixs[0]], EvalExpr(line[ixs[0]:ixs[1]])...)
+			line = append(q, line[ixs[1]:]...)
+		} else {
+			break
+		}
+	}
+	return EvalExpr(line)
 }
 
 func SplitWords(line []byte) [][]byte {
