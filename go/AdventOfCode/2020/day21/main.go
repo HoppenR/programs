@@ -13,24 +13,18 @@ import (
 )
 
 // ATI = Allergen -> ingredients.
-// Ingredients is a slice of each line (as a set) where the allergen appears
-// multiple allergens can link to an identical set of ingredients
-// ati[dairy] -> [Set("kfcds", "nhms"), Set("trh", "fvjkl")]
-// ati[fish]  -> [Set("kfcds", "nhms"), Set("sbzzf")]
+// Ingredients is a slice of each line (as a set) where the allergen appears, ex
+// ati[dairy] -> [Set("mxmxvkd", "sqjhc"), Set("trh", "mxmxvkd")]
+// ati[fish]  -> [Set("mxmxvkd", "sqjhc"), Set("sqjhc", "sbzzf")]
 type ATI map[string][]*strset.Set
 
-type Book []Ingredient
-
 type Ingredient struct {
-	ingName  string
+	name     string
 	allergen string
 }
 
-var pattern = regexp.MustCompile(`(.+) \(contains (.+)\)`)
-
 func main() {
-	// Ati links to same set of ingredients several times,
-	// but ingredients only contain one single instance of each set
+	// Ingredients only contain one single instance of each set, ati does not
 	ati, ingredients, err := ReadFoods("input")
 	if err != nil {
 		log.Fatalln(err)
@@ -40,61 +34,43 @@ func main() {
 }
 
 func NumSafe(ati ATI, ingredients []*strset.Set) (cnt int) {
-	safe := SafeIngredients(ati)
-	for _, ing := range ingredients {
-		cnt += strset.Intersection(ing, safe).Size()
+	bad := strset.New()
+	for _, lines := range ati {
+		bad.Merge(strset.Intersection(lines...))
 	}
-	return cnt
-}
-
-func SafeIngredients(ati ATI) *strset.Set {
-	inter := strset.New()
-	union := strset.New()
-	for _, v := range ati {
-		inter.Merge(strset.Intersection(v...))
-		union.Merge(strset.Union(v...))
+	for _, in := range ingredients {
+		cnt += strset.Difference(in, bad).Size()
 	}
-	return strset.Difference(union, inter)
+	return
 }
 
 func DangerousIngredients(ati ATI) string {
-	// allergen -> Set(candidate1, candidate2...)
-	dangerous := make(map[string]*strset.Set, 0)
-	for k, v := range ati {
-		dangerous[k] = strset.Intersection(v...)
+	// dangerous[allergen] -> Set(candidate1, candidate2, ...)
+	dangerous := make(map[string]*strset.Set)
+	for allergen, lines := range ati {
+		dangerous[allergen] = strset.Intersection(lines...)
 	}
-	assigned := make(Book, 0)
-	// Resolve all multiple-candidates
+	var assigned []Ingredient
 	for len(dangerous) > 0 {
-		for k, v := range dangerous {
-			if v.Size() == 1 {
-				assigned = append(assigned, Ingredient{v.List()[0], k})
-				delete(dangerous, k)
+		for allergen, candidates := range dangerous {
+			if candidates.Size() == 1 {
+				name := candidates.Pop()
+				assigned = append(assigned, Ingredient{name, allergen})
+				delete(dangerous, allergen)
 				for i := range dangerous {
-					dangerous[i].Separate(v)
+					dangerous[i].Remove(name)
 				}
 			}
 		}
 	}
-	// Sort by allergen
-	sort.Sort(assigned)
+	sort.Slice(assigned, func(i, j int) bool {
+		return assigned[i].allergen < assigned[j].allergen
+	})
 	var items []string
-	for _, v := range assigned {
-		items = append(items, v.ingName)
+	for _, in := range assigned {
+		items = append(items, in.name)
 	}
 	return strings.Join(items, ",")
-}
-
-func (b Book) Len() int {
-	return len(b)
-}
-
-func (b Book) Less(i, j int) bool {
-	return b[i].allergen < b[j].allergen
-}
-
-func (b Book) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
 }
 
 func ReadFoods(filename string) (ATI, []*strset.Set, error) {
@@ -104,15 +80,16 @@ func ReadFoods(filename string) (ATI, []*strset.Set, error) {
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
-	ati := make(ATI, 0)
+	ati := make(ATI)
 	var ingredients []*strset.Set
+	pattern := regexp.MustCompile(`(.+) \(contains (.+)\)`)
 	for scanner.Scan() {
-		groups := pattern.FindAllStringSubmatch(scanner.Text(), -1)
-		lineSet := strset.New(strings.Fields(groups[0][1])...)
-		for _, aller := range strings.Split(groups[0][2], ", ") {
-			ati[aller] = append(ati[aller], lineSet)
+		groups := pattern.FindStringSubmatch(scanner.Text())
+		line := strset.New(strings.Fields(groups[1])...)
+		for _, allergen := range strings.Split(groups[2], ", ") {
+			ati[allergen] = append(ati[allergen], line)
 		}
-		ingredients = append(ingredients, lineSet)
+		ingredients = append(ingredients, line)
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, nil, err
