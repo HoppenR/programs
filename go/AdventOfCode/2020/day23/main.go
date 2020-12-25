@@ -121,7 +121,7 @@ func ReadLabels(filename string) (*list.List, error) {
 	}
 	content = bytes.TrimRight(content, "\n")
 	labels := list.New()
-	for _, b := range bytes.Split(content, []byte{}) {
+	for _, b := range content {
 		n, err := strconv.Atoi(string(b))
 		if err != nil {
 			return nil, err
