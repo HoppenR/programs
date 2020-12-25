@@ -57,9 +57,9 @@ var exampleInput = []Coord{
 }
 
 func TestPart1(t *testing.T) {
-	assert.Equal(t, 10, Paint(exampleInput))
+	assert.Equal(t, 10, CountPainted(exampleInput, false))
 }
 
 func TestPart2(t *testing.T) {
-	assert.Equal(t, 0, func() int { return 0 }())
+	assert.Equal(t, 2208, CountPainted(exampleInput, true))
 }
