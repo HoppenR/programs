@@ -15,6 +15,7 @@ declare -A gamearray=(
 ["Borderlands 2"]="run/49520"
 ["Borderlands: The Pre-Sequel"]="run/261640"
 ["Darkest Dungeon"]="run/262060"
+["Darksburg"]="run/939100"
 ["Dota 2"]="run/570"
 ["Downward"]="run/506900"
 ["Dreamfall Chapters"]="run/237850"
@@ -35,6 +36,7 @@ declare -A gamearray=(
 ["Slime Rancher"]="run/433340"
 ["Store"]="store"
 ["Transistor"]="run/237930"
+["Underlords"]="run/1046930"
 ["Valley"]="run/378610"
 ["Victor Vran"]="run/345180"
 )
