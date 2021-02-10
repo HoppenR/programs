@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+// TODO: Clean up further
+
 func main() {
 	numbers, err := ReadLines("input")
 	if err != nil {
@@ -37,13 +39,13 @@ func EvalLine(line []byte, plus bool) (sum int) {
 	for {
 		ixs := pattern.FindSubmatchIndex(line)
 		if ixs != nil {
-			var q []byte
+			var end []byte
 			if !plus {
-				q = append(line[:ixs[0]], EvalExpr(line[ixs[0]+1:ixs[1]-1])...)
+				end = append(EvalExpr(line[ixs[0]+1:ixs[1]-1]), line[ixs[1]:]...)
 			} else {
-				q = append(line[:ixs[0]], EvalExprPlus(line[ixs[0]+1:ixs[1]-1])...)
+				end = append(EvalExprPlus(line[ixs[0]+1:ixs[1]-1]), line[ixs[1]:]...)
 			}
-			line = append(q, line[ixs[1]:]...)
+			line = append(line[:ixs[0]], end...)
 		} else {
 			break
 		}
@@ -57,7 +59,7 @@ func EvalLine(line []byte, plus bool) (sum int) {
 	if err != nil {
 		panic(err)
 	}
-	return sum
+	return
 }
 
 // Explicitly calls EvalExpr with all additions before evaluaing as normal
@@ -65,8 +67,8 @@ func EvalExprPlus(line []byte) []byte {
 	for {
 		ixs := addpattern.FindSubmatchIndex(line)
 		if ixs != nil {
-			q := append(line[:ixs[0]], EvalExpr(line[ixs[0]:ixs[1]])...)
-			line = append(q, line[ixs[1]:]...)
+			end := append(EvalExpr(line[ixs[0]:ixs[1]]), line[ixs[1]:]...)
+			line = append(line[:ixs[0]], end...)
 		} else {
 			break
 		}
@@ -79,11 +81,7 @@ func SplitWords(line []byte) [][]byte {
 	acc := make([]byte, 0)
 	for i := 0; i < len(line); i++ {
 		switch line[i] {
-		case '+':
-			words = append(words, acc)
-			words = append(words, line[i:i+1])
-			acc = []byte{}
-		case '*':
+		case '+', '*':
 			words = append(words, acc)
 			words = append(words, line[i:i+1])
 			acc = []byte{}
@@ -102,18 +100,14 @@ func EvalExpr(line []byte) []byte {
 		panic(err)
 	}
 	for i := 1; i < len(words); i += 2 {
+		m, err := strconv.Atoi(string(words[i+1]))
+		if err != nil {
+			panic(err)
+		}
 		switch words[i][0] {
 		case '+':
-			m, err := strconv.Atoi(string(words[i+1]))
-			if err != nil {
-				panic(err)
-			}
 			sum += m
 		case '*':
-			m, err := strconv.Atoi(string(words[i+1]))
-			if err != nil {
-				panic(err)
-			}
 			sum *= m
 		}
 	}

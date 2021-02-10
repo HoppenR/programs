@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -83,40 +82,37 @@ func Paint(movement []Coord) Floor {
 	return painted
 }
 
-func ReadLabels(filename string) ([]Coord, error) {
+func ReadLabels(filename string) (movement []Coord,  err error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return
 	}
-	content = bytes.TrimRight(content, "\n")
-	var movement []Coord
-	for _, l := range bytes.Split(content, []byte{'\n'}) {
-		for i := 0; i < len(l); i++ {
-			switch l[i] {
+	for i := 0; i < len(content); i++ {
+		switch content[i] {
+		case 'e':
+			movement = append(movement, Coord{2, 0})
+		case 'w':
+			movement = append(movement, Coord{-2, 0})
+		case 'n':
+			i++
+			switch content[i] {
 			case 'e':
-				movement = append(movement, Coord{2, 0})
+				movement = append(movement, Coord{1, 2})
 			case 'w':
-				movement = append(movement, Coord{-2, 0})
-			case 'n':
-				i++
-				switch l[i] {
-				case 'e':
-					movement = append(movement, Coord{1, 2})
-				case 'w':
-					movement = append(movement, Coord{-1, 2})
-				}
-			case 's':
-				i++
-				switch l[i] {
-				case 'e':
-					movement = append(movement, Coord{1, -2})
-				case 'w':
-					movement = append(movement, Coord{-1, -2})
-				}
+				movement = append(movement, Coord{-1, 2})
 			}
+		case 's':
+			i++
+			switch content[i] {
+			case 'e':
+				movement = append(movement, Coord{1, -2})
+			case 'w':
+				movement = append(movement, Coord{-1, -2})
+			}
+		case '\n':
+			// A movement of {0, 0} means paint and reset pos
+			movement = append(movement, Coord{0, 0})
 		}
-		// A movement of {0, 0} means paint and reset pos
-		movement = append(movement, Coord{0, 0})
 	}
-	return movement, nil
+	return
 }
