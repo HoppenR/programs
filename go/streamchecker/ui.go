@@ -3,12 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
+
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
 
 type UI struct {
@@ -27,7 +29,7 @@ type MainPage struct {
 	con         *tview.Flex
 	displayList *tview.List
 	streamInfo  *tview.TextView
-	streamList  *tview.List
+	streamList  Channels
 }
 
 func (ui *UI) inputHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -114,7 +116,7 @@ func (ui *UI) openLink(userName string) {
 	ui.app.Stop()
 }
 
-func printMenu(channels *Channels) (err error) {
+func initUI(channels *Channels) (err error) {
 	if len(channels.Data) == 0 {
 		return errors.New("No live channels found")
 	}
@@ -125,7 +127,7 @@ func printMenu(channels *Channels) (err error) {
 			con:         tview.NewFlex(),
 			displayList: tview.NewList(),
 			streamInfo:  tview.NewTextView(),
-			streamList:  tview.NewList(),
+			streamList:  *channels,
 		},
 		pg2: PopupPage{
 			con:   tview.NewGrid(),
@@ -155,16 +157,22 @@ func (ui *UI) setupMainPage(channels *Channels) error {
 	// DisplayList
 	ui.pg1.con.AddItem(ui.pg1.displayList, 0, 1, true)
 	updateStreamInfo := func(ix int, pri, sec string, _ rune) {
-		var dataix []int = ui.pg1.streamList.FindItems(pri, sec, true, false)
+		var index int = -1
+		for i, v := range channels.Data {
+			if pri == v.UserName {
+				index = i
+				break
+			}
+		}
 		add := func(c string) {
 			ui.pg1.streamInfo.Write([]byte(c))
 		}
 		ui.pg1.streamInfo.Clear()
-		if dataix == nil {
+		if index == -1 {
 			add("No results")
 		} else {
 			// TODO: figure out how to add tags to streaminfo
-			selChannel := channels.Data[dataix[0]]
+			selChannel := &channels.Data[index]
 			startLocal := selChannel.StartedAt.Local()
 			selChannel.Title = tview.Escape(selChannel.Title)
 			if selChannel.GameName == "" {
@@ -188,7 +196,6 @@ func (ui *UI) setupMainPage(channels *Channels) error {
 			" %-6d[green:-:u]%s[-:-:-]",
 			v.ViewerCount, tview.Escape(v.GameName),
 		)
-		ui.pg1.streamList.AddItem(v.UserName, secondaryText, 0, nil)
 		ui.pg1.displayList.AddItem(v.UserName, secondaryText, 0, nil)
 	}
 	ui.pg1.displayList.SetBackgroundColor(tcell.ColorDefault)
@@ -208,54 +215,11 @@ func (ui *UI) setupMainPage(channels *Channels) error {
 }
 
 func (ui *UI) setupPopupPage() {
-	// Ftwpala jbpratt I could just check if the filter state is the same
-	// before and after the dialog, and if it is restore the selection
 	ui.pg2.input.SetBackgroundColor(tcell.ColorDefault)
 	ui.pg2.input.SetBorder(true)
 	ui.pg2.input.SetTitle("Filter")
-	// TODO: Should pressing escape cancel the filter?
 	ui.pg2.input.SetFinishedFunc(func(key tcell.Key) { ui.pages.HidePage("Popup") })
-	ui.pg2.input.SetChangedFunc(func(filter string) {
-		ui.pg1.displayList.Clear()
-		var invertfilter bool
-		if filter == "" || filter == "!" {
-			for i := 0; i < ui.pg1.streamList.GetItemCount(); i++ {
-				mainstr, secstr := ui.pg1.streamList.GetItemText(i)
-				ui.pg1.displayList.AddItem(mainstr, secstr, 0, nil)
-			}
-			return
-		}
-		if filter[0] == '!' {
-			filter = filter[1:]
-			invertfilter = true
-		}
-		// TODO: maybe choose whether to filter pri or scd string?
-		// Maybe remake the filtering entirely to filter for different
-		// categories and/or to allow searching for other stream information
-		var ixs []int = ui.pg1.streamList.FindItems(filter, filter, false, true)
-		if ixs == nil {
-			ui.pg1.displayList.AddItem("", "", 0, nil)
-			return
-		}
-		if invertfilter {
-			nItems := ui.pg1.streamList.GetItemCount()
-			nMatches := len(ixs)
-			newixs := make([]int, 0, nItems-nMatches)
-			next := 0
-			for i := 0; i < nItems; i++ {
-				if i != ixs[next] {
-					newixs = append(newixs, i)
-				} else if next < nMatches-1 {
-					next++
-				}
-			}
-			ixs = newixs
-		}
-		for _, v := range ixs {
-			mainstr, secstr := ui.pg1.streamList.GetItemText(v)
-			ui.pg1.displayList.AddItem(mainstr, secstr, 0, nil)
-		}
-	})
+	ui.pg2.input.SetChangedFunc(ui.filterPage)
 	const (
 		PopupWidth  = 26
 		PopupHeight = 3
@@ -264,4 +228,54 @@ func (ui *UI) setupPopupPage() {
 	ui.pg2.con.SetColumns(0, PopupWidth, 0)
 	ui.pg2.con.SetRows(0, PopupHeight, 0)
 	ui.pg2.con.AddItem(ui.pg2.input, 1, 1, 1, 1, 0, 0, true)
+}
+
+func (ui *UI) matchStreamlistIndex(filter string, inverted bool) []int {
+	var ixs []int
+	re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(filter))
+	for i, v := range ui.pg1.streamList.Data {
+		matches := []bool{
+			re.MatchString(v.GameName),
+			re.MatchString(v.Title),
+			re.MatchString(v.UserName),
+		}
+		valid := inverted
+		for _, v := range matches {
+			if v && !inverted {
+				valid = true
+				break
+			}
+			if v && inverted {
+				valid = false
+				break
+			}
+		}
+		if valid {
+			ixs = append(ixs, i)
+		}
+	}
+	return ixs
+}
+
+func (ui *UI) filterPage(filter string) {
+	ui.pg1.displayList.Clear()
+	inverted := false
+	if len(filter) > 0 && filter[0] == '!' {
+		inverted = true
+		filter = filter[1:]
+	}
+	ixs := ui.matchStreamlistIndex(filter, inverted)
+	if ixs == nil {
+		ui.pg1.displayList.AddItem("", "", 0, nil)
+		return
+	}
+	for _, v := range ixs {
+		mainstr := ui.pg1.streamList.Data[v].UserName
+		secstr := fmt.Sprintf(
+			" %-6d[green:-:u]%s[-:-:-]",
+			ui.pg1.streamList.Data[v].ViewerCount,
+			tview.Escape(ui.pg1.streamList.Data[v].GameName),
+		)
+		ui.pg1.displayList.AddItem(mainstr, secstr, 0, nil)
+	}
 }

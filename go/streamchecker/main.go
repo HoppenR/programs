@@ -16,6 +16,7 @@ var (
 )
 
 // ✅ searching/filtering,
+// ❌ ordering
 // ❌ command line arguments,
 // ❌ figure out live alert library meme,
 // ❌ and background checking
@@ -48,7 +49,7 @@ func main() {
 			log.Fatalln(err.Error())
 		}
 		sort.Sort(sort.Reverse(channels))
-		err = printMenu(channels)
+		err = initUI(channels)
 		if err != nil {
 			log.Println(err.Error())
 			os.Exit(2)
