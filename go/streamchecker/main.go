@@ -20,9 +20,6 @@ var (
 // ❌ command line arguments,
 // ❌ figure out live alert library meme,
 // ❌ and background checking
-
-// Figure out how to create more tview windows, display extra info on the
-// hovered window
 func main() {
 	//TODO: validate the token and refresh as needed
 	background := flag.Bool("b", false,

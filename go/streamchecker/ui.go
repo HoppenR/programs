@@ -16,8 +16,8 @@ import (
 type UI struct {
 	app   *tview.Application
 	pages *tview.Pages
-	pg1   MainPage
-	pg2   PopupPage
+	pg1   *MainPage
+	pg2   *PopupPage
 }
 
 type PopupPage struct {
@@ -29,7 +29,7 @@ type MainPage struct {
 	con         *tview.Flex
 	displayList *tview.List
 	streamInfo  *tview.TextView
-	streamList  Channels
+	streamList  *Channels
 }
 
 func (ui *UI) inputHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -79,6 +79,20 @@ func (ui *UI) inputHandler(event *tcell.EventKey) *tcell.EventKey {
 		primaryText, _ := ui.pg1.displayList.GetItemText(sel)
 		ui.openLink(primaryText)
 		return nil
+	case tcell.KeyCtrlN:
+		if sel == cnt-1 {
+			ui.pg1.displayList.SetCurrentItem(0)
+		} else {
+			ui.pg1.displayList.SetCurrentItem(ui.pg1.displayList.GetCurrentItem() + 1)
+		}
+		return nil
+	case tcell.KeyCtrlP:
+		if sel == 0 {
+			ui.pg1.displayList.SetCurrentItem(cnt - 1)
+		} else {
+			ui.pg1.displayList.SetCurrentItem(ui.pg1.displayList.GetCurrentItem() - 1)
+		}
+		return nil
 	}
 	// Let the default list primitive key event handler handle the rest
 	return event
@@ -120,16 +134,19 @@ func initUI(channels *Channels) (err error) {
 	if len(channels.Data) == 0 {
 		return errors.New("No live channels found")
 	}
+	for _, v := range channels.Data {
+		v.Title = tview.Escape(v.Title)
+	}
 	ui := &UI{
 		app:   tview.NewApplication(),
 		pages: tview.NewPages(),
-		pg1: MainPage{
+		pg1: &MainPage{
 			con:         tview.NewFlex(),
 			displayList: tview.NewList(),
 			streamInfo:  tview.NewTextView(),
-			streamList:  *channels,
+			streamList:  channels,
 		},
-		pg2: PopupPage{
+		pg2: &PopupPage{
 			con:   tview.NewGrid(),
 			input: tview.NewInputField(),
 		},
@@ -171,10 +188,8 @@ func (ui *UI) setupMainPage(channels *Channels) error {
 		if index == -1 {
 			add("No results")
 		} else {
-			// TODO: figure out how to add tags to streaminfo
 			selChannel := &channels.Data[index]
 			startLocal := selChannel.StartedAt.Local()
-			selChannel.Title = tview.Escape(selChannel.Title)
 			if selChannel.GameName == "" {
 				selChannel.GameName = "[::d]None[::-]"
 			}
@@ -232,8 +247,17 @@ func (ui *UI) setupPopupPage() {
 
 func (ui *UI) matchStreamlistIndex(filter string, inverted bool) []int {
 	var ixs []int
-	re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(filter))
+	re, err := regexp.Compile("(?i)" + filter)
+	if err != nil {
+		ui.pg2.input.SetBorderColor(tcell.ColorRed)
+	} else {
+		ui.pg2.input.SetBorderColor(tcell.ColorDefault)
+	}
 	for i, v := range ui.pg1.streamList.Data {
+		if err != nil {
+			ixs = append(ixs, i)
+			continue
+		}
 		matches := []bool{
 			re.MatchString(v.GameName),
 			re.MatchString(v.Title),
@@ -241,12 +265,8 @@ func (ui *UI) matchStreamlistIndex(filter string, inverted bool) []int {
 		}
 		valid := inverted
 		for _, v := range matches {
-			if v && !inverted {
-				valid = true
-				break
-			}
-			if v && inverted {
-				valid = false
+			if v {
+				valid = !valid
 				break
 			}
 		}
