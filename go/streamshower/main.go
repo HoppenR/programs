@@ -74,7 +74,8 @@ func main() {
 	}
 
 	if *background {
-		cfg := new(ConfigData)
+		cfg := new(Config)
+		cfg.SetConfigFolder("streamshower")
 		configErr := cfg.Load(ConfigFile)
 		if configErr != nil {
 			log.Println("warn: config read failed: " + configErr.Error())
@@ -91,9 +92,9 @@ func main() {
 		}
 
 		ad := new(sc.AuthData)
-		ad.SetClientID(cfg.ClientID)
-		ad.SetClientSecret(cfg.ClientSecret)
-		ad.SetUserName(cfg.UserName)
+		ad.SetClientID(cfg.data.ClientID)
+		ad.SetClientSecret(cfg.data.ClientSecret)
+		ad.SetUserName(cfg.data.UserName)
 		err = ad.SetCacheFolder(CacheFolder)
 		if err != nil {
 			log.Fatalln(err)
@@ -185,7 +186,7 @@ func notifyOfflines(stream sc.StreamData) {
 		args = []string{
 			"@" + stream.GetName(),
 			"sggL I enjoyed my stay",
-			home + "Pictures/memes/sggLBase.png",
+			"--icon=" + home + "/Pictures/memes/sggLBase.png",
 			"--urgency=low",
 		}
 	}
