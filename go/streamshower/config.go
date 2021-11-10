@@ -27,7 +27,7 @@ func (c *Config) SetConfigFolder(name string) error {
 		return err
 	}
 	abspath := filepath.Join(confdir, name)
-	err = os.MkdirAll(confdir, os.ModePerm)
+	err = os.MkdirAll(abspath, os.ModePerm)
 	if err != nil {
 		return err
 	}

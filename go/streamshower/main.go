@@ -19,6 +19,7 @@ const (
 // TODO(ss): '/': Search instead of filter.
 // TODO(sc): Save follows data between requests.
 // TODO(sc): Separate twitch streams and strims streams in getting?
+// TODO(ss): open MPV
 
 func main() {
 	background := flag.Bool(
