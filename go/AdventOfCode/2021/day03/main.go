@@ -14,10 +14,44 @@ func main() {
 		log.Fatalln(err)
 	}
 	fmt.Println("1:", PowerConsumption(diagnostic, nBits))
+	fmt.Println("2:", LifeSupport(diagnostic, nBits))
 }
 
-func PowerConsumption(diagnostic []int64, nBits int) int {
-	var ε, γ int
+func FilterBitCriteria(diagnostic []int64, nBits int, defaultValue int64) int64 {
+	diagCpy := make([]int64, len(diagnostic))
+	copy(diagCpy, diagnostic)
+	for i := nBits - 1; i >= 0; i-- {
+		var common [2]int
+		for _, v := range diagCpy {
+			common[(v>>i)%2]++
+		}
+		for j := 0; j < len(diagCpy); {
+			if common[1] >= common[0] {
+				if (diagCpy[j]>>i)%2 != defaultValue {
+					diagCpy = append(diagCpy[:j], diagCpy[j+1:]...)
+					continue
+				}
+			} else {
+				if (diagCpy[j]>>i)%2 == defaultValue {
+					diagCpy = append(diagCpy[:j], diagCpy[j+1:]...)
+					continue
+				}
+			}
+			j++
+		}
+		if len(diagCpy) == 1 {
+			return diagCpy[0]
+		}
+	}
+	panic("Unreachable")
+}
+
+func LifeSupport(diagnostic []int64, nBits int) int64 {
+	return FilterBitCriteria(diagnostic, nBits, 1) * FilterBitCriteria(diagnostic, nBits, 0)
+}
+
+func PowerConsumption(diagnostic []int64, nBits int) int64 {
+	var ε, γ int64
 	for i := nBits - 1; i >= 0; i-- {
 		var common [2]int
 		for _, v := range diagnostic {
