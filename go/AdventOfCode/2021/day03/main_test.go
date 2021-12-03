@@ -21,8 +21,9 @@ var testDiagnostic = []int64{
 }
 
 func TestPart1(t *testing.T) {
-	assert.Equal(t, 198, PowerConsumption(testDiagnostic, 5))
+	assert.Equal(t, int64(198), PowerConsumption(testDiagnostic, 5))
 }
 
 func TestPart2(t *testing.T) {
+	assert.Equal(t, int64(230), LifeSupport(testDiagnostic, 5))
 }
