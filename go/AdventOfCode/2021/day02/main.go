@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,15 @@ type Pos struct {
 	X   int
 	Y   int
 	aim int
+}
+
+func main() {
+	deltaPos, err := ReadDeltas("input")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println("1:", SimPos(deltaPos, false))
+	fmt.Println("2:", SimPos(deltaPos, true))
 }
 
 func (lh *Pos) add(rh Pos) {
@@ -61,7 +71,7 @@ func ReadDeltas(filename string) ([]Pos, error) {
 		case "down":
 			pos.Y = val
 		default:
-			log.Fatalln("unhandled movement:" + fields[0])
+			return nil, errors.New("unhandled movement:" + fields[0])
 		}
 		deltaPos = append(deltaPos, pos)
 	}
@@ -69,13 +79,4 @@ func ReadDeltas(filename string) ([]Pos, error) {
 		return nil, err
 	}
 	return deltaPos, nil
-}
-
-func main() {
-	deltaPos, err := ReadDeltas("input")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println("1:", SimPos(deltaPos, false))
-	fmt.Println("2:", SimPos(deltaPos, true))
 }
