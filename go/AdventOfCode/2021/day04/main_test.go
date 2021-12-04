@@ -43,8 +43,9 @@ var testBoards = []Board{
 }
 
 func TestPart1(t *testing.T) {
-	assert.Equal(t, 4512, SimulateBingo(testPicks, testBoards))
+	assert.Equal(t, 4512, SimulateBingo(testPicks, testBoards, false))
 }
 
 func TestPart2(t *testing.T) {
+	assert.Equal(t, 1924, SimulateBingo(testPicks, testBoards, true))
 }
