@@ -18,10 +18,11 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("1:", SimulateBingo(picks, boards))
+	fmt.Println("1:", SimulateBingo(picks, boards, false))
+	fmt.Println("2:", SimulateBingo(picks, boards, true))
 }
 
-func CheckWinner(boards []Board) int {
+func MarkWinners(boards []Board, winners []int) []int {
 	for bi, b := range boards {
 		for i := 0; i < 5; i++ {
 			validRow := true
@@ -35,11 +36,19 @@ func CheckWinner(boards []Board) int {
 				}
 			}
 			if validRow || validCol {
-				return bi
+				hasAlreadyWon := false
+				for _, w := range winners {
+					if w == bi {
+						hasAlreadyWon = true
+					}
+				}
+				if !hasAlreadyWon {
+					winners = append(winners, bi)
+				}
 			}
 		}
 	}
-	return -1
+	return winners
 }
 
 func BoardScore(board Board, lastDraw int) int {
@@ -52,17 +61,20 @@ func BoardScore(board Board, lastDraw int) int {
 	return score * lastDraw
 }
 
-func SimulateBingo(picks []int, boards []Board) int {
+func SimulateBingo(picks []int, boards []Board, simulateFull bool) int {
+	var winners []int
 	for _, p := range picks {
 		for bi := range boards {
 			for i := 0; i < 25; i++ {
 				if boards[bi].slots[i/5][i%5] == p {
 					boards[bi].marked[i/5][i%5] = true
+					break
 				}
 			}
 		}
-		if winner := CheckWinner(boards); winner != -1 {
-			return BoardScore(boards[winner], p)
+		winners = MarkWinners(boards, winners)
+		if (!simulateFull && len(winners) > 0) || (len(winners) == len(boards)) {
+			return BoardScore(boards[winners[len(winners)-1]], p)
 		}
 	}
 	panic("Unreachable")
