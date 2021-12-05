@@ -1,8 +1,38 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+)
+
+var SHORTCUT_HELP = strings.Join(
+	[]string{
+		"",
+		"[red]{↓|j|^n}[-]↓",
+		"[red]{↑|k|^p}[-]↑",
+		"[red::u]g[-::-]Top",
+		"[red::u]G[-::-]Bot",
+		"[red::u]^e[-::-]Scr↓",
+		"[red::u]^y[-::-]Scr↑",
+		"[red::u]^h[-::-]Scr←",
+		"[red::u]^l[-::-]Scr→",
+		"[red::u]M[-::-]Mid",
+		"\n",
+		"[red]{o|^w}[-]List",
+		"[red::u]i[-::-]Info",
+		"[red::u]f[-::-]Filter",
+		"[red::u]F[-::-]ClearFilter",
+		"[red::u]r[-::-]Refresh",
+		"[red::u]q[-::-]Quit",
+		"\n",
+		"[red]{l|→|↵|^j}[-]Open Embed",
+		"[red::u]w[-::-]Open Website",
+		"[red::u]s[-::-]Open Strims",
+		"[red::u]m[-::-]Open Mpv",
+	},
+	" ",
 )
 
 func (ui *UI) streamInfoInputHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -19,6 +49,9 @@ func (ui *UI) streamInfoInputHandler(event *tcell.EventKey) *tcell.EventKey {
 }
 
 func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
+	printerr := func(err error) {
+		ui.pg1.streamInfo.SetText("[red]⚠ " + err.Error() + "[-]")
+	}
 	ui.pg1.focusedList = ui.app.GetFocus().(*tview.List)
 	listCnt := ui.pg1.focusedList.GetItemCount()
 	listIdx := ui.pg1.focusedList.GetCurrentItem()
@@ -65,9 +98,18 @@ func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
 			}
 			return nil
 		case 'l':
-			ui.openSelectedStream(lnkOpenEmbed)
-			ui.app.Stop()
+			if err := ui.openSelectedStream(lnkOpenEmbed); err != nil {
+				printerr(err)
+			} else {
+				ui.app.Stop()
+			}
 			return nil
+		case 'm':
+			if err := ui.openSelectedStream(lnkOpenMpv); err != nil {
+				printerr(err)
+			} else {
+				ui.app.Stop()
+			}
 		case 'o':
 			switch ui.pg1.focusedList.GetTitle() {
 			case "Twitch":
@@ -85,12 +127,18 @@ func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
 			ui.pages.ShowPage("Refresh-Dialogue")
 			return nil
 		case 's':
-			ui.openSelectedStream(lnkOpenStrims)
-			ui.app.Stop()
+			if err := ui.openSelectedStream(lnkOpenStrims); err != nil {
+				printerr(err)
+			} else {
+				ui.app.Stop()
+			}
 			return nil
 		case 'w':
-			ui.openSelectedStream(lnkOpenHomePage)
-			ui.app.Stop()
+			if err := ui.openSelectedStream(lnkOpenHomePage); err != nil {
+				printerr(err)
+			} else {
+				ui.app.Stop()
+			}
 			return nil
 		}
 	case tcell.KeyLeft:
@@ -123,8 +171,11 @@ func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
 		}
 		return nil
 	case tcell.KeyEnter, tcell.KeyRight, tcell.KeyCtrlJ:
-		ui.openSelectedStream(lnkOpenEmbed)
-		ui.app.Stop()
+		if err := ui.openSelectedStream(lnkOpenEmbed); err != nil {
+			printerr(err)
+		} else {
+			ui.app.Stop()
+		}
 		return nil
 	case tcell.KeyDown, tcell.KeyCtrlN:
 		if listIdx != listCnt-1 {

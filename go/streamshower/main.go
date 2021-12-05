@@ -19,7 +19,10 @@ const (
 // TODO(ss): '/': Search instead of filter.
 // TODO(sc): Save follows data between requests.
 // TODO(sc): Separate twitch streams and strims streams in getting?
-// TODO(ss): open MPV
+// TODO(ss): On-demand get start time for angelthump streams
+//           From https://api.angelthump.com/v2/streams
+// TODO(ss): Don't display m3u8 streams of angelthump, instead make them
+//           expandable/collapsable under the angelthump stream they are from
 
 func main() {
 	background := flag.Bool(
@@ -27,7 +30,7 @@ func main() {
 		false,
 		"Check for streams in the background and serve data over local network",
 	)
-	embed := flag.String (
+	embed := flag.String(
 		"e",
 		"",
 		"get the embed string",
@@ -114,7 +117,7 @@ func main() {
 		bg.SetAuthData(ad)
 		bg.SetInterval(*refreshTime)
 		bg.SetLiveCallback(notifyLives)
-		bg.SetOfflineCallback(notifyOfflines)
+		bg.SetOfflineCallback(nil)
 		err = bg.Run()
 		if err != nil {
 			log.Fatalln(err)
@@ -135,14 +138,14 @@ func main() {
 	}
 }
 
-func notifyLives(stream sc.StreamData) bool {
+func notifyLives(stream sc.StreamData) {
 	urgency := "normal"
 	var args []string
 	iconbase := "/usr/share/icons/Adwaita/48x48/categories/"
 	switch stream.GetService() {
 	case "angelthump":
 		if stream.(*sc.StrimsStreamData).Rustlers < 3 || stream.GetName() == "psrngafk" {
-			return false
+			break
 		}
 		args = []string{
 			stream.GetName(),
@@ -167,29 +170,6 @@ func notifyLives(stream sc.StreamData) bool {
 		break
 	default:
 		break
-	}
-	if args != nil {
-		exec.Command("notify-send", args...).Run()
-	} else  {
-		return false
-	}
-	return true
-}
-
-func notifyOfflines(stream sc.StreamData) {
-	var args []string
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	switch stream.GetService() {
-	case "angelthump":
-		args = []string{
-			"@" + stream.GetName(),
-			"sggL I enjoyed my stay",
-			"--icon=" + home + "/Pictures/memes/sggLBase.png",
-			"--urgency=low",
-		}
 	}
 	if args != nil {
 		exec.Command("notify-send", args...).Run()

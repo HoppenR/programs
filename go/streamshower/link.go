@@ -15,13 +15,11 @@ type OpenMethod int
 const (
 	lnkOpenEmbed OpenMethod = iota
 	lnkOpenHomePage
+	lnkOpenMpv
 	lnkOpenStrims
 )
 
-func (ui *UI) openSelectedStream(method OpenMethod) {
-	printerr := func(errstr string) {
-		ui.pg1.streamInfo.SetText("[red]⚠ " + errstr + "[-]")
-	}
+func (ui *UI) openSelectedStream(method OpenMethod) error {
 	listIdx := ui.pg1.focusedList.GetCurrentItem()
 	var data sc.StreamData
 	primaryText, _ := ui.pg1.focusedList.GetItemText(listIdx)
@@ -42,22 +40,29 @@ func (ui *UI) openSelectedStream(method OpenMethod) {
 		}
 	}
 	if data == nil {
-		printerr("Cannot open empty result")
-		return
+		return errors.New("Cannot open empty result")
 	}
-	browser := os.Getenv("BROWSER")
-	if browser == "" {
-		printerr("set $BROWSER before opening links")
-		return
+	program := ""
+	switch method {
+	case lnkOpenStrims, lnkOpenEmbed, lnkOpenHomePage:
+		program = os.Getenv("BROWSER")
+	case lnkOpenMpv:
+		program = "/usr/bin/mpv"
+	}
+	if program == "" {
+		return errors.New("set $BROWSER before opening links")
 	}
 	rawURL, err := streamToUrlString(data, method)
 	if err != nil {
-		printerr(err.Error())
-		return
+		return err
 	}
-	if exec.Command(browser, rawURL).Run() != nil {
-		printerr("Error forking $BROWSER")
+	p, err := exec.LookPath(program)
+	if err != nil {
+		panic(err)
 	}
+		err = exec.Command(p, rawURL).Run()
+	_, err = os.StartProcess(p, []string{p, rawURL}, &os.ProcAttr{Env: os.Environ()})
+	return err
 }
 
 func streamToUrlString(data sc.StreamData, method OpenMethod) (string, error) {
@@ -107,17 +112,37 @@ func streamToUrlString(data sc.StreamData, method OpenMethod) (string, error) {
 		default:
 			return "", errors.New("Platform " + data.GetService() + " not implemented!")
 		}
-	case lnkOpenHomePage:
+	// TODO: Split into 2 separate
+	case lnkOpenHomePage, lnkOpenMpv:
 		switch data.GetService() {
 		case "angelthump":
-			u = &url.URL{
-				Host: "angelthump.com",
-				Path: data.GetName(),
+			switch method {
+			case lnkOpenHomePage:
+				u = &url.URL{
+					Host: "angelthump.com",
+					Path: data.GetName(),
+				}
+			case lnkOpenMpv:
+				u = &url.URL{
+					Host: "ams-haproxy.angelthump.com",
+					Path: "/hls/" + data.GetName() + "/index.m3u8",
+				}
 			}
 		case "m3u8":
-			u = &url.URL{
-				Host: "strims.gg",
-				Path: "m3u8/" + data.GetName(),
+			switch method {
+			case lnkOpenHomePage:
+				u = &url.URL{
+					Host: "strims.gg",
+					Path: "m3u8/" + data.GetName(),
+				}
+			case lnkOpenMpv:
+				var err error
+				// NOTE: This never keeps its query string
+				//       u.RawQuery gets replaced with `q`s values
+				u, err = url.Parse(data.GetName())
+				if err != nil {
+					return "", err
+				}
 			}
 		case "twitch", "twitch-followed":
 			u = &url.URL{
