@@ -23,6 +23,7 @@ declare -A gamearray=(
 ["Enter the Gungeon"]="run/311690"
 ["hackmud"]="run/469920"
 ["Half Life 2"]="run/220"
+["Heaven's Vault"]="run/774201"
 ["Hollow Knight"]="run/367520"
 ["Iratus: Lord of the Dead"]="run/807120"
 ["Killing Floor"]="run/1250"
