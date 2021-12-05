@@ -38,8 +38,10 @@ type MainPage struct {
 	streamInfo  *tview.TextView
 	streams     *sc.Streams
 	streamsCon  *tview.Flex
+	infoCon     *tview.Flex
 	strimsList  *tview.List
 	twitchList  *tview.List
+	infoText    *tview.TextView
 }
 
 func (ui *UI) SetPort(port string) {
@@ -73,9 +75,11 @@ func NewUI() *UI {
 		pg1: &MainPage{
 			con:        tview.NewFlex(),
 			streamsCon: tview.NewFlex(),
+			infoCon:    tview.NewFlex(),
 			twitchList: tview.NewList(),
 			strimsList: tview.NewList(),
 			streamInfo: tview.NewTextView(),
+			infoText:   tview.NewTextView(),
 		},
 		pg2: &FilterInput{
 			con:   tview.NewGrid(),
@@ -118,9 +122,14 @@ func (ui *UI) Run() error {
 	return nil
 }
 
+// TODO: Use SetDrawFunc instead of OnChange + initializing?
+//       No need to trigger OnChange initially
+
 func (ui *UI) setupMainPage() {
 	ui.pg1.con.AddItem(ui.pg1.streamsCon, 0, 1, true)
 	ui.pg1.streamsCon.SetDirection(tview.FlexRow)
+	ui.pg1.con.AddItem(ui.pg1.infoCon, 0, 2, false)
+	ui.pg1.infoCon.SetDirection(tview.FlexRow)
 	// TwitchList
 	ui.pg1.streamsCon.AddItem(ui.pg1.twitchList, 0, 3, true)
 	ui.pg1.twitchList.SetChangedFunc(ui.updateTwitchStreamInfo)
@@ -142,13 +151,24 @@ func (ui *UI) setupMainPage() {
 	ui.pg1.strimsList.SetTitle("Strims")
 	ui.pg1.strimsList.SetSelectedFocusOnly(true)
 	// StreamInfo
-	ui.pg1.con.AddItem(ui.pg1.streamInfo, 0, 2, true)
+	ui.pg1.infoCon.AddItem(ui.pg1.streamInfo, 0, 5, true)
 	ui.pg1.streamInfo.SetBackgroundColor(tcell.ColorDefault)
 	ui.pg1.streamInfo.SetBorder(true)
 	ui.pg1.streamInfo.SetInputCapture(ui.streamInfoInputHandler)
 	ui.pg1.streamInfo.SetDynamicColors(true)
 	ui.pg1.streamInfo.SetTitle("Stream Info")
-	ui.pg1.streamInfo.SetWrap(false)
+	// TextInfo
+	ui.pg1.infoCon.AddItem(ui.pg1.infoText, 3, 0, false)
+	ui.pg1.infoText.SetBackgroundColor(tcell.ColorDefault)
+	ui.pg1.infoText.SetDynamicColors(true)
+	ui.pg1.infoText.SetDrawFunc(func(s tcell.Screen, x, y, w, h int) (int, int, int, int) {
+		if w < 63 {
+			ui.pg1.infoText.Clear()
+		} else {
+			ui.pg1.infoText.SetText(SHORTCUT_HELP)
+		}
+		return x, y, w, h
+	})
 }
 
 func (ui *UI) setupRefreshDialoguePage() {
