@@ -65,7 +65,15 @@ func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
 			ui.pg1.focusedList.SetCurrentItem(listCnt - 1)
 			return nil
 		case 'M':
-			ui.pg1.focusedList.SetCurrentItem((listCnt - 1) / 2)
+			offset, _ := ui.pg1.focusedList.GetOffset()
+			_, _, _, height := ui.pg1.focusedList.GetRect()
+			midView := offset + (height / 4) - 1
+			midItem := offset + (listCnt - 1) / 2
+			if midItem < midView {
+				ui.pg1.focusedList.SetCurrentItem(midItem)
+			} else {
+				ui.pg1.focusedList.SetCurrentItem(midView)
+			}
 			return nil
 		case 'i':
 			ui.pg1.con.ResizeItem(ui.pg1.streamsCon, 0, 0)
@@ -140,6 +148,11 @@ func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
 				ui.app.Stop()
 			}
 			return nil
+		case 'z':
+			rOff, cOff := ui.pg1.focusedList.GetOffset()
+			_, _, _, height := ui.pg1.focusedList.GetRect()
+			delta := (listIdx - rOff) - (height / 4)
+			ui.pg1.focusedList.SetOffset(rOff+delta, cOff)
 		}
 	case tcell.KeyLeft:
 		return nil

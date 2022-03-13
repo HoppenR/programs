@@ -60,8 +60,8 @@ func (ui *UI) openSelectedStream(method OpenMethod) error {
 	if err != nil {
 		panic(err)
 	}
-		err = exec.Command(p, rawURL).Run()
-	_, err = os.StartProcess(p, []string{p, rawURL}, &os.ProcAttr{Env: os.Environ()})
+	err = exec.Command(p, rawURL).Run()
+	// _, err = os.StartProcess(p, []string{p, rawURL}, &os.ProcAttr{Env: os.Environ()})
 	return err
 }
 

@@ -144,7 +144,7 @@ func notifyLives(stream sc.StreamData) {
 	iconbase := "/usr/share/icons/Adwaita/48x48/categories/"
 	switch stream.GetService() {
 	case "angelthump":
-		if stream.(*sc.StrimsStreamData).Rustlers < 3 || stream.GetName() == "psrngafk" {
+		if stream.GetName() == "psrngafk" {
 			break
 		}
 		args = []string{
