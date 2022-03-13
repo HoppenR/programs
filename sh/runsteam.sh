@@ -15,6 +15,7 @@ declare -A gamearray=(
 ["Borderlands"]="run/8980"
 ["Borderlands 2"]="run/49520"
 ["Borderlands: The Pre-Sequel"]="run/261640"
+["Borderlands 3"]="run/397540"
 ["Darkest Dungeon"]="run/262060"
 ["Darksburg"]="run/939100"
 ["Dota 2"]="run/570"
