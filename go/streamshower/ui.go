@@ -24,8 +24,9 @@ type UI struct {
 }
 
 type FilterInput struct {
-	con   *tview.Grid
-	input *tview.InputField
+	con      *tview.Grid
+	input    *tview.InputField
+	inverted bool
 }
 
 type DialogueBox struct {

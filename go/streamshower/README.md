@@ -27,9 +27,9 @@ standard vim navigation: `jkl` or arrow keys + enter
 
 `F` to clear filter
 
-Twitch filters starting with `!` shows only non-matching results
+Twitch filters: pressing `!` inverts the showing matches
 
-Strims filters only work with numbers as a minimum-rustler-threshold
+Strims filters: numbers work as a minimum-rustler-threshold
 
 filter window supports regular readline keys such as ctrl-u to clear, ctrl-a to
 go to beginning of line, ctrl-e to go to end of line etc
