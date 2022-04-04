@@ -30,7 +30,21 @@ func (ui *UI) setupFilterTwitchPage() {
 		FilterWidth  = 26
 		FilterHeight = 3
 	)
-	ui.pg2.input.SetAcceptanceFunc(tview.InputFieldMaxLength(FilterWidth - 3))
+	ui.pg2.input.SetAcceptanceFunc(func(toCheck string, lastChar rune) bool {
+		if lastChar == '!' {
+			if ui.pg2.inverted {
+				ui.pg2.input.SetTitle("Filter(Regex)")
+				ui.pg2.inverted = false
+			} else {
+				ui.pg2.input.SetTitle("Filter(Regex(inverted))")
+				ui.pg2.inverted = true
+			}
+			ui.refreshTwitchList()
+			return false
+		}
+		return tview.InputFieldMaxLength(FilterWidth-3)(toCheck, lastChar)
+	})
+	//	tview.InputFieldMaxLength(FilterWidth - 3))
 	ui.pg2.con.SetColumns(0, FilterWidth, 0)
 	ui.pg2.con.SetRows(0, FilterHeight, 0)
 	ui.pg2.con.AddItem(ui.pg2.input, 1, 1, 1, 1, 0, 0, true)
@@ -38,12 +52,7 @@ func (ui *UI) setupFilterTwitchPage() {
 
 func (ui *UI) filterTwitchList(filter string) {
 	ui.pg1.twitchList.Clear()
-	inverted := false
-	if len(filter) > 0 && filter[0] == '!' {
-		inverted = true
-		filter = filter[1:]
-	}
-	ixs := ui.matchTwitchListIndex(filter, inverted)
+	ixs := ui.matchTwitchListIndex(filter, ui.pg2.inverted)
 	if ixs == nil {
 		ui.pg1.twitchList.AddItem("", "", 0, nil)
 		return
