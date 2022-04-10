@@ -11,7 +11,7 @@ import (
 )
 
 type Config struct {
-	data          configData
+	data         configData
 	configFolder string
 }
 
