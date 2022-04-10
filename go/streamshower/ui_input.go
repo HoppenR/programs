@@ -68,7 +68,7 @@ func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
 			offset, _ := ui.pg1.focusedList.GetOffset()
 			_, _, _, height := ui.pg1.focusedList.GetRect()
 			midView := offset + (height / 4) - 1
-			midItem := offset + (listCnt - 1) / 2
+			midItem := offset + (listCnt-1)/2
 			if midItem < midView {
 				ui.pg1.focusedList.SetCurrentItem(midItem)
 			} else {
@@ -153,6 +153,15 @@ func (ui *UI) listInputHandler(event *tcell.EventKey) *tcell.EventKey {
 			_, _, _, height := ui.pg1.focusedList.GetRect()
 			delta := (listIdx - rOff) - (height / 4)
 			ui.pg1.focusedList.SetOffset(rOff+delta, cOff)
+		case '!':
+			if ui.pg2.inverted {
+				ui.pg2.input.SetTitle("Filter(Regex)")
+				ui.pg2.inverted = false
+			} else {
+				ui.pg2.input.SetTitle("Filter(Regex(inverted))")
+				ui.pg2.inverted = true
+			}
+			ui.refreshTwitchList()
 		}
 	case tcell.KeyLeft:
 		return nil
