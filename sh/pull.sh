@@ -35,7 +35,7 @@ then
 	exit 3
 fi
 
-declare -a repositories=(streamchecker/ AdventOfCode/ config-files/ notes/ programs/ .vim/pack/plugins/start/vim-polyglot/
+declare -a repositories=(streamchecker/ AdventOfCode/ config-files/ programs/ .vim/pack/plugins/start/vim-polyglot/
 .vim/pack/plugins/start/YouCompleteMe/ .vim/pack/plugins/start/nerdtree)
 
 cd ~ || exit 8
