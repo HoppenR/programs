@@ -30,10 +30,10 @@ set -u
 ### ------------------ CONFIGURATION VARIABLES ------------------
 ## Repository Locations
 # This should have 1 entry per repo.
-declare -a RepoLocations=(config-files/ notes/ programs/)
+declare -a RepoLocations=(config-files/ programs/)
 ## Repository File Locations
 # This should have 1 entry per repo.
-declare -a RepoFilesLocations=("$HOSTNAME/" ./ ./)
+declare -a RepoFilesLocations=("$HOSTNAME/" ./)
 
 ## SYNC #1
 # config-files repository files
