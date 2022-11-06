@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"time"
 
 	sc "github.com/HoppenR/streamchecker"
@@ -139,6 +138,7 @@ func main() {
 }
 
 func notifyLives(stream sc.StreamData) {
+	/*
 	urgency := "normal"
 	var args []string
 	iconbase := "/usr/share/icons/Adwaita/48x48/categories/"
@@ -174,4 +174,5 @@ func notifyLives(stream sc.StreamData) {
 	if args != nil {
 		exec.Command("notify-send", args...).Run()
 	}
+	*/
 }
