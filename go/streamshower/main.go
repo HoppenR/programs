@@ -139,40 +139,40 @@ func main() {
 
 func notifyLives(stream sc.StreamData) {
 	/*
-	urgency := "normal"
-	var args []string
-	iconbase := "/usr/share/icons/Adwaita/48x48/categories/"
-	switch stream.GetService() {
-	case "angelthump":
-		if stream.GetName() == "psrngafk" {
+		urgency := "normal"
+		var args []string
+		iconbase := "/usr/share/icons/Adwaita/48x48/categories/"
+		switch stream.GetService() {
+		case "angelthump":
+			if stream.GetName() == "psrngafk" {
+				break
+			}
+			args = []string{
+				stream.GetName(),
+				"Is being viewed on Strims!",
+				"--icon=" + iconbase + "applications-multimedia-symbolic.symbolic.png",
+				"--urgency=" + urgency,
+			}
+		case "m3u8":
+			break
+		case "twitch":
+			break
+		case "twitch-followed":
+			args = []string{
+				stream.GetName(),
+				"Just went live!",
+				"--icon=" + iconbase + "applications-games-symbolic.symbolic.png",
+				"--urgency=" + urgency,
+			}
+		case "twitch-vod":
+			break
+		case "youtube":
+			break
+		default:
 			break
 		}
-		args = []string{
-			stream.GetName(),
-			"Is being viewed on Strims!",
-			"--icon=" + iconbase + "applications-multimedia-symbolic.symbolic.png",
-			"--urgency=" + urgency,
+		if args != nil {
+			exec.Command("notify-send", args...).Run()
 		}
-	case "m3u8":
-		break
-	case "twitch":
-		break
-	case "twitch-followed":
-		args = []string{
-			stream.GetName(),
-			"Just went live!",
-			"--icon=" + iconbase + "applications-games-symbolic.symbolic.png",
-			"--urgency=" + urgency,
-		}
-	case "twitch-vod":
-		break
-	case "youtube":
-		break
-	default:
-		break
-	}
-	if args != nil {
-		exec.Command("notify-send", args...).Run()
-	}
 	*/
 }
