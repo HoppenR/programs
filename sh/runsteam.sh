@@ -3,8 +3,8 @@ set -u
 
 if ! pgrep -x "steam" > /dev/null
 then
-	steam-native -silent &
-	notify-send "Starting steam" -i "/usr/share/pixmaps/steam.png"
+    steam-native -silent &
+    notify-send "Starting steam" -i "/usr/share/pixmaps/steam.png"
 fi
 
 declare -A gamearray=(
@@ -50,20 +50,20 @@ declare -A gamearray=(
 gamelist=$(printf "%s\\n" "${!gamearray[@]}" | sort)
 
 if ! game="$(dmenu -i -l ${#gamearray[@]} -fn 'Liberation Mono:size=10' \
-	-nb '#272B35' -nf '#F5F7FA' -sf '#F5F7FA' -sb '#5675B9' -p '»' \
-	<<< "$gamelist")"
+    -nb '#272B35' -nf '#F5F7FA' -sf '#F5F7FA' -sb '#5675B9' -p '»' \
+    <<< "$gamelist")"
 then
-	exit 1
+    exit 1
 fi
 
 if ! grep -qx "$game" <<< "$gamelist"
 then
-	game="$(grep -im1 "$game" <<< "$gamelist")" || exit 2
+    game="$(grep -im1 "$game" <<< "$gamelist")" || exit 2
 fi
 
 if [[ -z $game ]]
 then
-	exit 3
+    exit 3
 fi
 
 steam-native steam://"${gamearray["$game"]}"

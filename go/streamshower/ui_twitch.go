@@ -44,7 +44,7 @@ func (ui *UI) setupFilterTwitchPage() {
 		}
 		return tview.InputFieldMaxLength(FilterWidth-3)(toCheck, lastChar)
 	})
-	//	tview.InputFieldMaxLength(FilterWidth - 3))
+	//  tview.InputFieldMaxLength(FilterWidth - 3))
 	ui.pg2.con.SetColumns(0, FilterWidth, 0)
 	ui.pg2.con.SetRows(0, FilterHeight, 0)
 	ui.pg2.con.AddItem(ui.pg2.input, 1, 1, 1, 1, 0, 0, true)
