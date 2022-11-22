@@ -65,82 +65,82 @@ declare -a LocalArrays=("${ConfLocalFiles[*]}" "" "" "")
 ## Choose what to do when two files differ
 # $1 = repo file, $2 = local file
 function actionFileDiffers {
-	select answer in "copy from local to repo" \
-		"copy from local to repo and commit" \
-		"vimdiff files" \
-		"copy from repo to local" \
-		"skip"
-	do
-		case "$answer" in
-			"copy from local to repo")
-				cp -i "$2" "$1"
-				break
-				;;
-			"copy from local to repo and commit")
-				cp -i "$2" "$1"
-				git commit --all
-				break
-				;;
-			"vimdiff files")
-				vimdiff "$1" "$2"
-				;;
-			"copy from repo to local")
-				cp -i "$1" "$2"
-				break
-				;;
-			"skip")
-				echo "Skipping..."
-				break
-				;;
-			*) echo "try again"
-				;;
-		esac
-	done
-	return 0
+    select answer in "copy from local to repo" \
+        "copy from local to repo and commit" \
+        "vimdiff files" \
+        "copy from repo to local" \
+        "skip"
+    do
+        case "$answer" in
+            "copy from local to repo")
+                cp -i "$2" "$1"
+                break
+                ;;
+            "copy from local to repo and commit")
+                cp -i "$2" "$1"
+                git commit --all
+                break
+                ;;
+            "vimdiff files")
+                vimdiff "$1" "$2"
+                ;;
+            "copy from repo to local")
+                cp -i "$1" "$2"
+                break
+                ;;
+            "skip")
+                echo "Skipping..."
+                break
+                ;;
+            *) echo "try again"
+                ;;
+        esac
+    done
+    return 0
 }
 
 ## Choose what to do when a repository's HEAD differs from its staged files
 function actionRepoDiffers {
-	select answer in "commit all files" \
-		"hard reset to HEAD" \
-		"display full git diff" \
-		"skip"
-	do
-		case "$answer" in
-			"commit all files")
-				git commit --all
-				break
-				;;
-			"hard reset to HEAD")
-				read -erp "Are you sure you want to hard reset to HEAD? (y/N)" \
-					confirm
-				case "$confirm" in
-					"y"|"yes")
-						git reset --hard HEAD
-						break
-						;;
-					*)
-						echo "Cancelling..."
-						break
-						;;
-				esac
-				break
-				;;
-			"display full git diff")
-				git diff --staged --minimal
-				echo -e "1) commit all files\\t  3) display full git diff"
-				echo -e "2) hard reset to HEAD\\t  4) skip"
-				;;
-			"skip")
-				echo "Skipping..."
-				break
-				;;
-			*)
-				echo "try again"
-				;;
-		esac
-	done
-	return 0
+    select answer in "commit all files" \
+        "hard reset to HEAD" \
+        "display full git diff" \
+        "skip"
+    do
+        case "$answer" in
+            "commit all files")
+                git commit --all
+                break
+                ;;
+            "hard reset to HEAD")
+                read -erp "Are you sure you want to hard reset to HEAD? (y/N)" \
+                    confirm
+                case "$confirm" in
+                    "y"|"yes")
+                        git reset --hard HEAD
+                        break
+                        ;;
+                    *)
+                        echo "Cancelling..."
+                        break
+                        ;;
+                esac
+                break
+                ;;
+            "display full git diff")
+                git diff --staged --minimal
+                echo -e "1) commit all files\\t  3) display full git diff"
+                echo -e "2) hard reset to HEAD\\t  4) skip"
+                ;;
+            "skip")
+                echo "Skipping..."
+                break
+                ;;
+            *)
+                echo "try again"
+                ;;
+        esac
+    done
+    return 0
 }
 
 # underlineWord() prints and underlines a word by storing the amount of spaces
@@ -148,14 +148,14 @@ function actionRepoDiffers {
 # and then replaces each space with a ─
 # $1 = word, $2 = insert tab (boolean)
 function underlineWord {
-	printf -v line "%${#1}s"
-	if [[ "$2" == true ]]
-	then
-		echo -e "\\t$1\\n\\t${line// /─}"
-	else
-		echo -e "$1\\n${line// /─}"
-	fi
-	return 0
+    printf -v line "%${#1}s"
+    if [[ "$2" == true ]]
+    then
+        echo -e "\\t$1\\n\\t${line// /─}"
+    else
+        echo -e "$1\\n${line// /─}"
+    fi
+    return 0
 }
 
 #### ----------------------- SCRIPT START -----------------------
@@ -163,33 +163,33 @@ cd ~ || exit 8
 # Loop from 0 to length of $RepoLocations - 1
 for i in $(seq 0 $(( ${#RepoLocations[@]} - 1 )))
 do
-	# Redirect the output to /dev/null to silently use pushd
-	pushd "${RepoLocations[i]}" > /dev/null || exit 8
-		# Only send the bottom level directory in pwd by using basename
-		underlineWord "$(basename "$(pwd)")/" false
-		# Stage all changed files for commit inside the git repo
-		git add --all
-		# Diffs the files staged for commit in comparison to HEAD
-		if ! git diff --staged --stat --exit-code
-		then
-			actionRepoDiffers
-		fi
-		pushd "${RepoFilesLocations[i]}" > /dev/null || exit 8
-			underlineWord "$(basename "$(pwd)")/" true
-			# Convert the strings back into arrays
-			read -ra CurReposArray <<< "${ReposArrays[i]}"
-			read -ra CurLocalArray <<< "${LocalArrays[i]}"
-			for j in $(seq 0 $(( ${#CurReposArray[@]} - 1 )))
-			do
-				rf="${CurReposArray[j]}"
-				lf="${CurLocalArray[j]}"
-				echo -e "\\t$rf"
-				if ! git diff "$rf" "$lf"
-				then
-					actionFileDiffers "$rf" "$lf"
-				fi
-			done
-		popd > /dev/null || exit 8
-	popd > /dev/null || exit 8
+    # Redirect the output to /dev/null to silently use pushd
+    pushd "${RepoLocations[i]}" > /dev/null || exit 8
+        # Only send the bottom level directory in pwd by using basename
+        underlineWord "$(basename "$(pwd)")/" false
+        # Stage all changed files for commit inside the git repo
+        git add --all
+        # Diffs the files staged for commit in comparison to HEAD
+        if ! git diff --staged --stat --exit-code
+        then
+            actionRepoDiffers
+        fi
+        pushd "${RepoFilesLocations[i]}" > /dev/null || exit 8
+            underlineWord "$(basename "$(pwd)")/" true
+            # Convert the strings back into arrays
+            read -ra CurReposArray <<< "${ReposArrays[i]}"
+            read -ra CurLocalArray <<< "${LocalArrays[i]}"
+            for j in $(seq 0 $(( ${#CurReposArray[@]} - 1 )))
+            do
+                rf="${CurReposArray[j]}"
+                lf="${CurLocalArray[j]}"
+                echo -e "\\t$rf"
+                if ! git diff "$rf" "$lf"
+                then
+                    actionFileDiffers "$rf" "$lf"
+                fi
+            done
+        popd > /dev/null || exit 8
+    popd > /dev/null || exit 8
 done
 #### ------------------------ SCRIPT END ------------------------

@@ -1,5 +1,5 @@
-CPPFLAGS+= -march=native
-CPPFLAGS+= -O2
+GCCFLAGS+= -march=native
+GCCFLAGS+= -O2
 
 all:
-	g++ $(CPPFLAGS) main.cpp
+	g++ $(GCCFLAGS) main.cpp
