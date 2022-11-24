@@ -40,7 +40,7 @@ declare -a RepoFilesLocations=("$HOSTNAME/" ./)
 declare -a ConfReposFiles=(.zshrc picom.conf i3/config .dir_colors dunstrc
 .gtkrc-2.0 .highlight.theme i3status/config lightdm-gtk-greeter.conf
 personal.vim .profile rc.conf rifle.conf scope.sh settings.ini init.lua
-plugins.lua alacritty/alacritty.yml .Xresources)
+plugins.lua alacritty.yml .Xresources)
 # config-files corresponding local files
 declare -a ConfLocalFiles=(~/.config/zsh/.zshrc ~/.config/picom.conf
 ~/.config/i3/config ~/.dir_colors ~/.config/dunst/dunstrc ~/.gtkrc-2.0
