@@ -37,14 +37,14 @@ declare -a RepoFilesLocations=("$HOSTNAME/" ./)
 
 ## SYNC #1
 # config-files repository files
-declare -a ConfReposFiles=(.zshrc picom.conf i3/config .dir_colors dunstrc
-.gtkrc-2.0 .highlight.theme i3status/config lightdm-gtk-greeter.conf
-personal.vim .profile rc.conf rifle.conf scope.sh settings.ini init.lua
-plugins.lua alacritty.yml .Xresources)
+declare -a ConfReposFiles=(.zshrc picom.conf i3/config DIR_COLORS dunstrc
+.gtkrc-2.0 highlight.theme i3status/config lightdm-gtk-greeter.conf personal.vim
+.profile rc.conf rifle.conf scope.sh settings.ini init.lua plugins.lua
+alacritty.yml .Xresources)
 # config-files corresponding local files
 declare -a ConfLocalFiles=(~/.config/zsh/.zshrc ~/.config/picom.conf
-~/.config/i3/config ~/.dir_colors ~/.config/dunst/dunstrc ~/.gtkrc-2.0
-~/.highlight.theme ~/.config/i3status/config
+~/.config/i3/config ~/.config/DIR_COLORS ~/.config/dunst/dunstrc ~/.gtkrc-2.0
+~/.config/highlight/highlight.theme ~/.config/i3status/config
 /etc/lightdm/lightdm-gtk-greeter.conf ~/.config/nvim/colors/personal.vim
 ~/.profile ~/.config/ranger/rc.conf ~/.config/ranger/rifle.conf
 ~/.config/ranger/scope.sh ~/.config/gtk-3.0/settings.ini ~/.config/nvim/init.lua
