@@ -35,7 +35,7 @@ then
     exit 3
 fi
 
-declare -a repositories=(streamchecker/ AdventOfCode/ config-files/ programs/)
+declare -a repositories=(streamchecker/ projects/AdventOfCode/ config-files/ programs/)
 
 cd ~ || exit 8
 for D in "${repositories[@]}"
