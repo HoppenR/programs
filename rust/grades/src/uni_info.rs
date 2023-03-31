@@ -1,23 +1,24 @@
 mod cursor;
-use cursor::*;
+mod print;
 
-use super::*;
+use cursor::{Cursor, CursorLevel};
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 type Tasks = BTreeMap<String, bool>;
 
 #[derive(Deserialize, Clone)]
 struct Moment {
+    code: String,
     completed: bool,
     credits: f32,
     description: String,
     tasks: Option<Tasks>,
 }
 
-type Moments = BTreeMap<String, Moment>;
+type Moments = BTreeSet<Moment>;
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[serde(untagged)]
 enum Grade {
     Completed(bool),
@@ -25,223 +26,166 @@ enum Grade {
     Ongoing,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord)]
 struct Course {
+    code: String,
     grade: Grade,
     moments: Moments,
     name: String,
 }
 
-type Period = BTreeMap<String, Course>;
-type Semester = [Period; 2];
+type Period = BTreeSet<Course>;
+
+#[derive(Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord)]
+struct Semester {
+    index: usize,
+    periods: [Period; 2],
+}
+
+type Menu = BTreeSet<Semester>;
 
 #[derive(Deserialize)]
-pub struct UniInfo {
-    info: BTreeMap<usize, Semester>,
+pub(super) struct UniInfo {
+    menu: Menu,
     #[serde(default)]
-    pub cursor: Cursor,
+    cursor: Cursor,
+}
+
+impl Eq for Moment {
+    fn assert_receiver_is_total_eq(&self) {}
+}
+
+impl PartialEq for Moment {
+    fn eq(&self, other: &Self) -> bool {
+        self.code == other.code
+    }
+}
+
+impl PartialOrd for Moment {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Moment {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.code.cmp(&other.code)
+    }
 }
 
 impl Course {
-    fn sum_credits(self: &Self) -> f32 {
+    fn sum_credits(&self) -> f32 {
         return self
             .moments
-            .values()
+            .iter()
             .filter_map(|v| if v.completed { Some(v.credits) } else { None })
             .sum();
     }
 
-    fn max_credits(self: &Self) -> f32 {
-        return self.moments.values().map(|v| v.credits).sum();
+    fn max_credits(&self) -> f32 {
+        return self.moments.iter().map(|v| v.credits).sum();
     }
 }
 
 impl UniInfo {
-    pub fn increase_cursor(self: &mut Self) {
-        let max_value: Option<usize> = match self.cursor.level {
-            CursorLevel::Semester => Some(self.info.len() - 1),
-            CursorLevel::Period => Some(1),
-            CursorLevel::Course => self
-                .info
-                .values()
-                .nth(self.cursor.semester_ix)
-                .and_then(|v| Some(v[self.cursor.period_ix].len() - 1)),
-            CursorLevel::Moment => self
-                .info
-                .values()
-                .nth(self.cursor.semester_ix)
-                .and_then(|v| {
-                    v[self.cursor.period_ix]
-                        .values()
-                        .nth(self.cursor.course_ix)
-                        .and_then(|x| Some(x.moments.len() - 1))
-                }),
-            CursorLevel::Task => self
-                .info
-                .values()
-                .nth(self.cursor.semester_ix)
-                .and_then(|v| {
-                    v[self.cursor.period_ix]
-                        .values()
-                        .nth(self.cursor.course_ix)
-                        .and_then(|x| {
-                            x.moments
-                                .values()
-                                .nth(self.cursor.moment_ix)
-                                .and_then(|w| w.tasks.as_ref().and_then(|y| Some(y.len() - 1)))
-                        })
-                }),
+    pub(super) fn cursor_increase(&mut self) {
+        let max_value: usize = match self.cursor.level {
+            CursorLevel::Semester => self.sel_menu_entries(),
+            CursorLevel::Period => self.sel_semester_entries(),
+            CursorLevel::Course => self.sel_period_entries(),
+            CursorLevel::Moment => self.sel_course_entries(),
+            CursorLevel::Task => self.sel_moment_entries(),
         };
-        if let Some(max) = max_value {
-            self.cursor.increase(max);
-        }
+        self.cursor.increase(max_value);
     }
 
-    pub fn decrease_cursor(self: &mut Self) {
+    pub(super) fn cursor_decrease(&mut self) {
         self.cursor.decrease();
     }
-}
 
-fn print_course(
-    code: &str,
-    course: &Course,
-    cursor: &Cursor,
-    location: &Vec<usize>,
-    indent_level: usize,
-) {
-    let (color, symbol): (&str, char) = match course.grade {
-        Grade::Completed(completed) => match completed {
-            true => (GRN, '✓'),
-            false => (RED, '✗'),
-        },
-        Grade::Grade(grade) => match grade {
-            (3..=5) => (GRN, char::from_digit(grade as u32, 10).unwrap()),
-            _ => unreachable!(),
-        },
-        Grade::Ongoing => (BLU, '…'),
-    };
-    print!(
-        "{leading}[{color}{symbol}{RST}] {UDL}{code}{RST} \
-        {BLD}{BLU}{name}{RST} {credits:.1}hp\n\r",
-        leading = indent(indent_level),
-        name = course.name,
-        credits = course.max_credits(),
-    );
-    if matches!(course.grade, Grade::Ongoing) {
-        print_moments(&course.moments, cursor, location, indent_level + 1);
-    }
-}
-
-fn print_header(name: &str, index: usize, indent_level: usize) {
-    print!(
-        "{leading}• {name} {index}:\n\r",
-        leading = indent(indent_level),
-    );
-}
-
-fn print_moments(moments: &Moments, cursor: &Cursor, location: &Vec<usize>, indent_level: usize) {
-    for (mom_idx, (moment_code, moment)) in moments.iter().enumerate() {
-        let mut mom_loc = location.clone();
-        mom_loc.push(mom_idx);
-        if cursor.matches(CursorLevel::Moment, &mom_loc) {
-            print!("→");
-        }
-        print!(
-            "{leading}{marker}[{moment_code}] \
-            {YLW}{CUR}{description}{RST} {credits:.1}hp\n\r",
-            leading = indent(indent_level),
-            marker = if moment.completed { STK } else { "" },
-            credits = moment.credits,
-            description = moment.description,
-        );
-        if !moment.completed {
-            print_tasks(&moment.tasks, cursor, &mom_loc, indent_level + 1);
-        }
-    }
-}
-
-fn print_progress(courses: &Vec<Course>, indent_level: usize) {
-    let mut accrued_creds: f32 = 0.0;
-    let mut total_creds: f32 = 0.0;
-    let mut grades: Vec<usize> = Vec::new();
-    for course in courses {
-        total_creds += course.max_credits();
-        accrued_creds += course.sum_credits();
-        match course.grade {
-            Grade::Completed(completed) => match completed {
-                true => {}
-                false => {}
+    pub(super) fn cursor_enter(&mut self) {
+        let num_entries_next_level: usize = match self.cursor.level {
+            CursorLevel::Semester => self.sel_semester_entries(),
+            CursorLevel::Period => self.sel_period_entries(),
+            CursorLevel::Course => match self.sel_course().map(|x| x.grade == Grade::Ongoing) {
+                Some(ongoing) if ongoing => self.sel_course_entries(),
+                _ => 0,
             },
-            Grade::Grade(grade) => match grade {
-                (3..=5) => {
-                    grades.push(grade);
-                }
-                _ => unreachable!(),
-            },
-            Grade::Ongoing => {}
+            CursorLevel::Moment => self.sel_moment_entries(),
+            CursorLevel::Task => 0,
+        };
+        if num_entries_next_level > 0 {
+            self.cursor.enter();
         }
     }
-    let average: f32 = grades.iter().sum::<usize>() as f32 / grades.len() as f32;
-    print!(
-        "{leading}{avg_color}{average:.3}{RST}avg ‖ \
-        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp\n\r",
-        leading = indent(indent_level),
-        cred_color = if accrued_creds > 0.0 { CYN } else { RED },
-        avg_color = if !f32::is_nan(average) { CYN } else { RED },
-    );
-}
 
-fn print_tasks(tasks: &Option<Tasks>, cursor: &Cursor, location: &Vec<usize>, indent_level: usize) {
-    if let Some(tasks) = tasks {
-        for (tsk_idx, (task_name, completion)) in tasks.iter().enumerate() {
-            let mut tsk_loc = location.clone();
-            tsk_loc.push(tsk_idx);
-            if cursor.matches(CursorLevel::Task, &tsk_loc) {
-                print!("→");
-            }
-            print!(
-                "{leading}{marker}{task_name}{RST}\n\r",
-                leading = indent(indent_level),
-                marker = if *completion { STK } else { "" },
-            );
+    pub(super) fn cursor_exit(&mut self) {
+        match self.cursor.level {
+            CursorLevel::Semester => {}
+            _ => self.cursor.exit(),
         }
     }
-}
 
-pub fn print_uni_info(uni_info: &UniInfo, cursor: &Cursor) {
-    let mut all_courses: Vec<Course> = Vec::new();
-    let mut semester_courses: Vec<Course> = Vec::new();
-    let mut period_courses: Vec<Course> = Vec::new();
-    print!("{BLD}{RED}Averages only include courses graded 3-5{RST}\n\r");
-    for (sem_idx, semester) in &uni_info.info {
-        if cursor.matches(CursorLevel::Semester, &vec![*sem_idx - 1]) {
-            print!("→");
+    fn sel_menu_entries(&self) -> usize {
+        match self.sel_menu() {
+            Some(menu) => menu.len(),
+            _ => 0,
         }
-        print_header("Semester", *sem_idx, 0);
-        for (per_idx, period) in semester.iter().enumerate() {
-            if cursor.matches(CursorLevel::Period, &vec![*sem_idx - 1, per_idx]) {
-                print!("→");
-            }
-            print_header("Period", per_idx + 1, 1);
-            for (cor_idx, (name, course)) in period.iter().enumerate() {
-                if cursor.matches(CursorLevel::Course, &vec![*sem_idx - 1, per_idx, cor_idx]) {
-                    print!("→");
-                }
-                print_course(
-                    name,
-                    course,
-                    &uni_info.cursor,
-                    &vec![*sem_idx - 1, per_idx, cor_idx],
-                    2,
-                );
-                period_courses.push(course.clone());
-            }
-            print_progress(&period_courses, 2);
-            semester_courses.append(&mut period_courses);
-        }
-        print_progress(&semester_courses, 1);
-        all_courses.append(&mut semester_courses);
-        print!("\n\r");
     }
-    print_progress(&all_courses, 0);
+
+    fn sel_semester_entries(&self) -> usize {
+        match self.sel_semester() {
+            Some(semester) => semester.periods.len(),
+            _ => 0,
+        }
+    }
+
+    fn sel_period_entries(&self) -> usize {
+        match self.sel_period() {
+            Some(period) => period.len(),
+            _ => 0,
+        }
+    }
+
+    fn sel_course_entries(&self) -> usize {
+        match self.sel_course() {
+            Some(course) => course.moments.len(),
+            _ => 0,
+        }
+    }
+
+    fn sel_moment_entries(&self) -> usize {
+        match self.sel_moment().and_then(|x| x.tasks.clone()) {
+            Some(tasks) => tasks.len(),
+            _ => 0,
+        }
+    }
+
+    fn sel_menu(&self) -> Option<&Menu> {
+        Some(&self.menu)
+    }
+
+    fn sel_semester(&self) -> Option<&Semester> {
+        self.menu.iter().nth(self.cursor.semester_ix)
+    }
+
+    fn sel_period(&self) -> Option<&Period> {
+        self.sel_semester()
+            .map(|v| &v.periods[self.cursor.period_ix])
+    }
+
+    fn sel_course(&self) -> Option<&Course> {
+        self.sel_period()
+            .and_then(|x| x.iter().nth(self.cursor.course_ix))
+    }
+
+    fn sel_moment(&self) -> Option<&Moment> {
+        self.sel_course()
+            .and_then(|x| x.moments.iter().nth(self.cursor.moment_ix))
+    }
+
+    // fn sel_task(&self) -> Option<&Tasks> {
+    //     self.sel_moment()
+    //         .and_then(|x| x.tasks.iter().nth(self.cursor.task_ix))
+    // }
 }
