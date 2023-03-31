@@ -1,8 +1,9 @@
 use serde::Deserialize;
 use std::cmp;
 
-#[derive(Deserialize, PartialEq)]
+#[derive(Deserialize, Default, PartialEq)]
 pub(super) enum CursorLevel {
+    #[default]
     Semester,
     Period,
     Course,
@@ -10,7 +11,7 @@ pub(super) enum CursorLevel {
     Task,
 }
 
-#[derive(Deserialize, PartialEq)]
+#[derive(Deserialize, Default, PartialEq)]
 pub(super) struct Cursor {
     pub(super) semester_ix: usize,
     pub(super) period_ix: usize,
@@ -18,19 +19,6 @@ pub(super) struct Cursor {
     pub(super) moment_ix: usize,
     pub(super) task_ix: usize,
     pub(super) level: CursorLevel,
-}
-
-impl Default for Cursor {
-    fn default() -> Self {
-        Cursor {
-            semester_ix: 0,
-            period_ix: 0,
-            course_ix: 0,
-            moment_ix: 0,
-            task_ix: 0,
-            level: CursorLevel::Semester,
-        }
-    }
 }
 
 impl Cursor {

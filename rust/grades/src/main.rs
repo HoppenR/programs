@@ -9,9 +9,16 @@ use uni_info::UniInfo;
 fn main() -> Result<(), Error> {
     // TODO: Better args parsing, maybe --all should disable hiding
     //       moments of non-ongoing courses
-    // TODO: Ability to edit the JSON through the program
+    //
+    // TODO: Ability to save the structs to JSON file
+    //
     // TODO: Add type CompletedExpanded, GradeExpanded to be able to expand non-visible fields,
     //       these would save as their non-expanded counterparts
+    //       Could I make SerDe do this internally, i.e with --all
+    //
+    // TODO: Some way to better edit the data
+    //
+    // TODO: Some way to add new entries
 
     // -- ARGS --
     let args: Vec<String> = env::args().collect();
