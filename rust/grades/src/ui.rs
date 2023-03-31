@@ -1,45 +1,71 @@
-use super::*;
-use std::io::{self, Error, Read, Write};
+mod term;
 
-pub fn ui_init() -> Result<libc::termios, Error> {
-    write!(io::stdout(), "{TERM_SAVE_BUFFER}")?;
-    let old_termios: libc::termios;
-    unsafe {
-        old_termios = set_raw_terminal_mode();
-    };
+use crate::uni_info::UniInfo;
+use std::io::{self, Error, Read, Write};
+use term::{
+    TERM_BUF_ALT, TERM_BUF_CLR, TERM_BUF_PRI, TERM_CURS_HOME, TERM_CURS_INVIS, TERM_CURS_VIS,
+};
+
+enum Key {
+    Exit,
+    Down,
+    Up,
+    Enter,
+    Abort,
+    Bad,
+}
+
+impl Key {
+    fn from_arr(key: [u8; 3]) -> Self {
+        match key {
+            [b'h', _, _] | [27, 91, 68] => Key::Exit,
+            [b'j', _, _] | [27, 91, 66] => Key::Down,
+            [b'k', _, _] | [27, 91, 65] => Key::Up,
+            [b'l', _, _] | [27, 91, 67] => Key::Enter,
+            [b'q', _, _] | [27, 0, 0] => Key::Abort,
+            _ => Key::Bad,
+        }
+    }
+}
+
+pub(super) fn init() -> Result<libc::termios, Error> {
+    write!(io::stdout(), "{TERM_BUF_ALT}")?;
+    write!(io::stdout(), "{TERM_BUF_CLR}")?;
+    write!(io::stdout(), "{TERM_CURS_HOME}")?;
+    write!(io::stdout(), "{TERM_CURS_INVIS}")?;
+    let old_termios: libc::termios = unsafe { term::set_raw_terminal_mode() };
+    io::stdout().flush()?;
     Ok(old_termios)
 }
 
-pub fn ui_exit(old_termios: &mut libc::termios) -> Result<(), Error> {
-    unsafe { set_noraw_terminal_mode(old_termios) };
-    write!(io::stdout(), "{TERM_RESET_BUFFER}")?;
-    Ok(())
+pub(super) fn exit(old_termios: &mut libc::termios) -> Result<(), Error> {
+    unsafe { term::set_noraw_terminal_mode(old_termios) };
+    write!(io::stdout(), "{TERM_CURS_VIS}")?;
+    write!(io::stdout(), "{TERM_BUF_CLR}")?;
+    write!(io::stdout(), "{TERM_CURS_HOME}")?;
+    write!(io::stdout(), "{TERM_BUF_PRI}")?;
+    io::stdout().flush()
 }
 
-pub fn ui_loop(uni_info: &mut UniInfo) -> Result<(), Error> {
-    let mut buffer: [u8; 3] = [0; 3];
+pub(super) fn ui_loop(uni: &mut UniInfo) -> Result<(), Error> {
+    let mut key: [u8; 3] = [0; 3];
     loop {
-        print!("{TERM_CLEARSCREEN}");
-        print_uni_info(&uni_info, &uni_info.cursor);
-        io::stdout().flush()?;
-        io::stdin().read(&mut buffer[..])?;
-        match buffer {
-            [b'j', _, _] | [27, 91, 66] => {
-                uni_info.increase_cursor();
-            }
-            [b'k', _, _] | [27, 91, 65] => {
-                uni_info.decrease_cursor();
-            }
-            [b'q', _, _] | [27, 0, 0] => {
-                break;
-            }
-            [b'l', _, _] => {
-                uni_info.cursor.enter();
-            }
-            [b'h', _, _] => {
-                uni_info.cursor.exit();
-            }
-            _ => {}
+        write!(io::stdout(), "{TERM_CURS_HOME}")?;
+        write!(io::stdout(), "{uni}")?;
+        let bytes_read: usize = io::stdin().read(&mut key[..])?;
+        if bytes_read == 0 {
+            return Err(Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid data on input",
+            ));
+        }
+        match Key::from_arr(key) {
+            Key::Exit => uni.cursor_exit(),
+            Key::Down => uni.cursor_increase(),
+            Key::Up => uni.cursor_decrease(),
+            Key::Enter => uni.cursor_enter(),
+            Key::Abort => break,
+            Key::Bad => {}
         }
     }
     Ok(())
