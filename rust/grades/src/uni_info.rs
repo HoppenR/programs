@@ -3,7 +3,9 @@ mod print;
 
 use cursor::{Cursor, CursorLevel};
 use serde::Deserialize;
-use std::collections::{BTreeMap, BTreeSet};
+use std::borrow::BorrowMut;
+use std::cmp;
+use std::collections::BTreeMap;
 
 type Tasks = BTreeMap<String, bool>;
 
@@ -16,9 +18,9 @@ struct Moment {
     tasks: Option<Tasks>,
 }
 
-type Moments = BTreeSet<Moment>;
+type Moments = Vec<Moment>;
 
-#[derive(Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Deserialize, PartialEq, Clone)]
 #[serde(untagged)]
 enum Grade {
     Completed(bool),
@@ -26,7 +28,7 @@ enum Grade {
     Ongoing,
 }
 
-#[derive(Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Deserialize, Clone)]
 struct Course {
     code: String,
     grade: Grade,
@@ -34,43 +36,21 @@ struct Course {
     name: String,
 }
 
-type Period = BTreeSet<Course>;
+type Period = Vec<Course>;
 
-#[derive(Deserialize, Clone, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Deserialize, Clone)]
 struct Semester {
     index: usize,
     periods: [Period; 2],
 }
 
-type Menu = BTreeSet<Semester>;
+type Menu = Vec<Semester>;
 
 #[derive(Deserialize)]
 pub(super) struct UniInfo {
     menu: Menu,
     #[serde(default)]
     cursor: Cursor,
-}
-
-impl Eq for Moment {
-    fn assert_receiver_is_total_eq(&self) {}
-}
-
-impl PartialEq for Moment {
-    fn eq(&self, other: &Self) -> bool {
-        self.code == other.code
-    }
-}
-
-impl PartialOrd for Moment {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Moment {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.code.cmp(&other.code)
-    }
 }
 
 impl Course {
@@ -126,6 +106,32 @@ impl UniInfo {
         }
     }
 
+    pub(super) fn edit_selection(&mut self) {
+        match self.cursor.level {
+            CursorLevel::Semester => {}
+            CursorLevel::Period => {}
+            CursorLevel::Course => {
+                if let Some(course) = self.sel_course_mut() {
+                    match course.grade.borrow_mut() {
+                        Grade::Completed(completed) => *completed = !*completed,
+                        Grade::Grade(grade) => *grade = cmp::max(3, (*grade + 1) % 6),
+                        Grade::Ongoing => {}
+                    }
+                }
+            }
+            CursorLevel::Moment => {
+                if let Some(moment) = self.sel_moment_mut() {
+                    moment.completed = !moment.completed;
+                }
+            }
+            CursorLevel::Task => {
+                if let Some((_, completed)) = self.sel_task_mut() {
+                    *completed = !*completed;
+                }
+            }
+        }
+    }
+
     fn sel_menu_entries(&self) -> usize {
         match self.sel_menu() {
             Some(menu) => menu.len(),
@@ -166,7 +172,7 @@ impl UniInfo {
     }
 
     fn sel_semester(&self) -> Option<&Semester> {
-        self.menu.iter().nth(self.cursor.semester_ix)
+        self.sel_menu().and_then(|x| x.get(self.cursor.semester_ix))
     }
 
     fn sel_period(&self) -> Option<&Period> {
@@ -175,17 +181,51 @@ impl UniInfo {
     }
 
     fn sel_course(&self) -> Option<&Course> {
-        self.sel_period()
-            .and_then(|x| x.iter().nth(self.cursor.course_ix))
+        self.sel_period().and_then(|x| x.get(self.cursor.course_ix))
     }
 
     fn sel_moment(&self) -> Option<&Moment> {
         self.sel_course()
-            .and_then(|x| x.moments.iter().nth(self.cursor.moment_ix))
+            .and_then(|x| x.moments.get(self.cursor.moment_ix))
     }
 
-    // fn sel_task(&self) -> Option<&Tasks> {
+    // fn sel_task(&self) -> Option<(&String, &bool)> {
     //     self.sel_moment()
-    //         .and_then(|x| x.tasks.iter().nth(self.cursor.task_ix))
+    //         .and_then(|x| x.tasks.as_ref())
+    //         .and_then(|x| x.iter().nth(self.cursor.task_ix))
     // }
+
+    fn sel_menu_mut(&mut self) -> Option<&mut Menu> {
+        Some(&mut self.menu)
+    }
+
+    fn sel_semester_mut(&mut self) -> Option<&mut Semester> {
+        let ix = self.cursor.semester_ix;
+        self.sel_menu_mut()?.get_mut(ix)
+    }
+
+    fn sel_period_mut(&mut self) -> Option<&mut Period> {
+        let ix = self.cursor.period_ix;
+        self.sel_semester_mut()?.periods.iter_mut().nth(ix)
+    }
+
+    fn sel_course_mut(&mut self) -> Option<&mut Course> {
+        let ix = self.cursor.course_ix;
+        self.sel_period_mut()?.get_mut(ix)
+    }
+
+    fn sel_moment_mut(&mut self) -> Option<&mut Moment> {
+        let ix = self.cursor.moment_ix;
+        self.sel_course_mut()?.moments.get_mut(ix)
+    }
+
+    fn sel_task_mut(&mut self) -> Option<(&String, &mut bool)> {
+        let ix = self.cursor.task_ix;
+        if let Some(moment) = self.sel_moment_mut() {
+            if let Some(tasks) = &mut moment.tasks {
+                return tasks.iter_mut().nth(ix);
+            }
+        }
+        None
+    }
 }

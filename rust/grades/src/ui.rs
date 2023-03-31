@@ -11,6 +11,7 @@ enum Key {
     Down,
     Up,
     Enter,
+    Edit,
     Abort,
     Bad,
 }
@@ -22,6 +23,7 @@ impl Key {
             [b'j', _, _] | [27, 91, 66] => Key::Down,
             [b'k', _, _] | [27, 91, 65] => Key::Up,
             [b'l', _, _] | [27, 91, 67] => Key::Enter,
+            [b'e', _, _] | [b' ', _, _] => Key::Edit,
             [b'q', _, _] | [27, 0, 0] => Key::Abort,
             _ => Key::Bad,
         }
@@ -64,6 +66,7 @@ pub(super) fn ui_loop(uni: &mut UniInfo) -> Result<(), Error> {
             Key::Down => uni.cursor_increase(),
             Key::Up => uni.cursor_decrease(),
             Key::Enter => uni.cursor_enter(),
+            Key::Edit => uni.edit_selection(),
             Key::Abort => break,
             Key::Bad => {}
         }
