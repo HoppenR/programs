@@ -1,8 +1,8 @@
 use serde::Deserialize;
 use std::cmp;
 
-#[derive(Deserialize, Default, PartialEq)]
-pub(super) enum CursorLevel {
+#[derive(Deserialize, Clone, Copy, Default, PartialEq)]
+pub(crate) enum CursorLevel {
     #[default]
     Semester,
     Period,
@@ -11,35 +11,17 @@ pub(super) enum CursorLevel {
     Task,
 }
 
-#[derive(Deserialize, Default, PartialEq)]
-pub(super) struct Cursor {
+#[derive(Deserialize, Clone, Copy, Default, PartialEq)]
+pub(crate) struct Cursor {
     pub(super) semester_ix: usize,
     pub(super) period_ix: usize,
     pub(super) course_ix: usize,
     pub(super) moment_ix: usize,
     pub(super) task_ix: usize,
-    pub(super) level: CursorLevel,
+    pub(crate) level: CursorLevel,
 }
 
 impl Cursor {
-    pub(super) fn new(
-        semester_ix: usize,
-        period_ix: usize,
-        course_ix: usize,
-        moment_ix: usize,
-        task_ix: usize,
-        level: CursorLevel,
-    ) -> Self {
-        Cursor {
-            semester_ix,
-            period_ix,
-            course_ix,
-            moment_ix,
-            task_ix,
-            level,
-        }
-    }
-
     pub(super) fn enter(&mut self) {
         match self.level {
             CursorLevel::Semester => self.level = CursorLevel::Period,
