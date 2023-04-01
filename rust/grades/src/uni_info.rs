@@ -1,7 +1,7 @@
-mod cursor;
+pub(super) mod cursor;
 mod print;
 
-pub(super) use cursor::*;
+use cursor::{Cursor, CursorLevel};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::ops::BitXorAssign;
@@ -10,7 +10,7 @@ use std::ops::BitXorAssign;
 pub(super) struct UniInfo {
     menu: Menu,
     #[serde(default, skip_serializing)]
-    pub(super) cursor: Cursor,
+    cursor: Cursor,
 }
 type Menu = Vec<Semester>;
 type Semester = [Period; 2];
@@ -36,6 +36,7 @@ struct Moment {
     completed: bool,
     credits: f32,
     description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     tasks: Option<Tasks>,
 }
 type Tasks = BTreeMap<String, bool>;
@@ -46,6 +47,10 @@ struct PrintableTask {
 }
 
 impl UniInfo {
+    pub(super) fn cursor_level(&self) -> CursorLevel {
+        self.cursor.level
+    }
+
     pub(super) fn cursor_increase(&mut self) {
         let max_value: usize = match self.cursor.level {
             CursorLevel::Semester => self.sel_menu_entries(),
@@ -104,6 +109,90 @@ impl UniInfo {
     pub(super) fn toggle_selected_task(&mut self) {
         if let Some((_, completed)) = self.sel_task_mut() {
             completed.bitxor_assign(true);
+        }
+    }
+
+    pub(super) fn add_semester(&mut self) {
+        if let Some(menu) = self.sel_menu_mut() {
+            menu.push([Vec::new(), Vec::new()])
+        }
+    }
+
+    pub(super) fn add_course(&mut self, code: String, grade: Grade, name: String) {
+        if let Some(period) = self.sel_period_mut() {
+            period.push(Course {
+                code,
+                grade,
+                moments: Vec::new(),
+                name,
+            })
+        }
+    }
+
+    pub(super) fn add_moment(&mut self, code: String, credits: f32, description: String) {
+        if let Some(course) = self.sel_course_mut() {
+            course.moments.push(Moment {
+                code,
+                completed: false,
+                credits,
+                description,
+                tasks: None,
+            })
+        }
+    }
+
+    pub(super) fn add_task(&mut self, name: String) {
+        if let Some(moment) = self.sel_moment_mut() {
+            if let Some(tasks) = moment.tasks.as_mut() {
+                tasks.insert(name, false);
+            } else {
+                moment.tasks = Some(BTreeMap::from([(name, false)]));
+            }
+        }
+    }
+
+    pub(super) fn delete_entry(&mut self) {
+        match self.cursor.level {
+            CursorLevel::Semester => {
+                let ix: usize = self.cursor.semester_ix;
+                if let Some(menu) = self.sel_menu_mut() {
+                    menu.remove(ix);
+                }
+            }
+            CursorLevel::Period => {}
+            CursorLevel::Course => {
+                let ix: usize = self.cursor.course_ix;
+                if let Some(period) = self.sel_period_mut() {
+                    period.remove(ix);
+                }
+            }
+            CursorLevel::Moment => {
+                let ix: usize = self.cursor.moment_ix;
+                if let Some(course) = self.sel_course_mut() {
+                    course.moments.remove(ix);
+                }
+            }
+            CursorLevel::Task => {
+                let ix: usize = self.cursor.task_ix;
+                let key: String = match self
+                    .sel_moment()
+                    .and_then(|x| x.tasks.as_ref())
+                    .and_then(|x| x.iter().nth(ix))
+                    .map(|x| x.0.clone())
+                {
+                    Some(key_str) => key_str,
+                    None => return,
+                };
+
+                if let Some(moment) = self.sel_moment_mut() {
+                    if let Some(tasks) = moment.tasks.as_mut() {
+                        tasks.retain(|n, _| *n != key);
+                        if tasks.is_empty() {
+                            moment.tasks = None;
+                        }
+                    }
+                }
+            }
         }
     }
 

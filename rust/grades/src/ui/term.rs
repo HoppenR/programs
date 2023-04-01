@@ -20,12 +20,13 @@ pub(super) const BUF_PRI: &str = "\x1b[?1049l";
 pub(super) const CURS_HOME: &str = "\x1b[H";
 pub(super) const CURS_INVIS: &str = "\x1b[?25l";
 pub(super) const CURS_VIS: &str = "\x1b[?25h";
+pub(super) const CURS_LEFT: &str = "\x1b[D";
 
-pub(super) unsafe fn set_noraw_terminal_mode(old_termios: &mut libc::termios) {
+pub(super) unsafe fn set_noraw(old_termios: &mut libc::termios) {
     libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, old_termios);
 }
 
-pub(super) unsafe fn set_raw_terminal_mode() -> libc::termios {
+pub(super) unsafe fn set_raw() -> libc::termios {
     let mut old_termios: libc::termios = mem::zeroed();
     libc::tcgetattr(libc::STDOUT_FILENO, &mut old_termios);
     let mut raw_termios: libc::termios = old_termios;
