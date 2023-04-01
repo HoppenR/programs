@@ -1,28 +1,83 @@
-use super::{cursor::Cursor, Course, CursorLevel, Grade, Moment, UniInfo};
+use super::{cursor::Cursor, Course, CursorLevel, Grade, Moment, PrintableTask, UniInfo};
+use crate::ui::*;
 use std::fmt::Display;
 
-const RST: &str = "\x1b[0m";
-const BLD: &str = "\x1b[1m";
-const CUR: &str = "\x1b[3m";
-const UDL: &str = "\x1b[4m";
-const STK: &str = "\x1b[9m";
-const RED: &str = "\x1b[91m";
-const GRN: &str = "\x1b[92m";
-const YLW: &str = "\x1b[93m";
-const BLU: &str = "\x1b[94m";
-const CYN: &str = "\x1b[96m";
-
-const EOL: &str = "\x1b[K\n\r";
 const INDENT: &str = "    ";
 
 fn indent(indent_level: usize) -> String {
     INDENT.repeat(indent_level)
 }
 
+impl Display for UniInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut all_courses: Vec<Course> = Vec::new();
+        let mut semester_courses: Vec<Course> = Vec::new();
+        let mut period_courses: Vec<Course> = Vec::new();
+        write!(
+            f,
+            "{BLD}{RED}Averages only include courses graded 3-5{RST}{end}\n\r",
+            end = ERASE_TO_LINE_END,
+        )?;
+        for (sem_ix, sem) in self.menu.iter().enumerate() {
+            let cursor = Cursor {
+                semester_ix: sem_ix,
+                level: CursorLevel::Semester,
+                ..Default::default()
+            };
+            write_header(f, "Semester", sem_ix + 1, self.cursor == cursor, indent(0))?;
+            for (period_ix, period) in sem.iter().enumerate() {
+                let cursor = Cursor {
+                    period_ix,
+                    level: CursorLevel::Period,
+                    ..cursor
+                };
+                write_header(f, "Period", period_ix + 1, self.cursor == cursor, indent(1))?;
+                for (course_ix, course) in period.iter().enumerate() {
+                    period_courses.push(course.clone());
+                    let cursor = Cursor {
+                        course_ix,
+                        level: CursorLevel::Course,
+                        ..cursor
+                    };
+                    write_entry(f, course, self.cursor == cursor, indent(2))?;
+                    if !course.should_print_moments() {
+                        continue;
+                    }
+                    for (moment_ix, moment) in course.moments.iter().enumerate() {
+                        let cursor = Cursor {
+                            moment_ix,
+                            level: CursorLevel::Moment,
+                            ..cursor
+                        };
+                        write_entry(f, moment, self.cursor == cursor, indent(3))?;
+                        if let Some(tasks) = &moment.tasks {
+                            for (task_ix, task) in tasks.iter().map(PrintableTask::from).enumerate()
+                            {
+                                let cursor = Cursor {
+                                    task_ix,
+                                    level: CursorLevel::Task,
+                                    ..cursor
+                                };
+                                write_entry(f, task, self.cursor == cursor, indent(4))?;
+                            }
+                        }
+                    }
+                }
+                write_progress(f, &period_courses, indent(2))?;
+                semester_courses.append(&mut period_courses);
+            }
+            write_progress(f, &semester_courses, indent(1))?;
+            all_courses.append(&mut semester_courses);
+        }
+        write_progress(f, &all_courses, indent(0))?;
+        write!(f, "{end}", end = ERASE_TO_DISP_END)
+    }
+}
+
 impl Display for Course {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (color, symbol): (&str, char) = match self.grade {
-            Grade::Completed(completed) => match completed {
+            Grade::Completed(passed) => match passed {
                 true => (GRN, '✓'),
                 false => (RED, '✗'),
             },
@@ -34,8 +89,7 @@ impl Display for Course {
         };
         write!(
             f,
-            "[{color}{symbol}{RST}] {UDL}{code}{RST} \
-            {BLD}{BLU}{name}{RST} {credits:.1}hp{EOL}",
+            "[{color}{symbol}{RST}] {UDL}{code}{RST} {BLD}{BLU}{name}{RST} {credits:.1}hp",
             code = self.code,
             name = self.name,
             credits = self.max_credits(),
@@ -47,8 +101,7 @@ impl Display for Moment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{marker}[{code}] \
-            {YLW}{CUR}{description}{RST} {credits:.1}hp{EOL}",
+            "{marker}[{code}] {YLW}{CUR}{description}{RST} {credits:.1}hp",
             marker = if self.completed { STK } else { "" },
             code = self.code,
             credits = self.credits,
@@ -57,23 +110,53 @@ impl Display for Moment {
     }
 }
 
-fn print_header(
+impl Display for PrintableTask {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{marker}{task_name}{RST}",
+            marker = if self.completed { STK } else { "" },
+            task_name = self.name,
+        )
+    }
+}
+
+fn write_entry<T>(
     f: &mut std::fmt::Formatter<'_>,
-    name: &str,
-    index: usize,
-    indent_level: usize,
-) -> std::fmt::Result {
+    entry: T,
+    targeted: bool,
+    start: String,
+) -> std::fmt::Result
+where
+    T: Display,
+{
     write!(
         f,
-        "{leading}• {name} {index}:{EOL}",
-        leading = indent(indent_level),
+        "{indicator}{start}{entry}{end}\n\r",
+        indicator = if targeted { "→" } else { "" },
+        end = ERASE_TO_LINE_END,
     )
 }
 
-fn print_progress(
+fn write_header(
+    f: &mut std::fmt::Formatter<'_>,
+    title: &str,
+    index: usize,
+    targeted: bool,
+    start: String,
+) -> std::fmt::Result {
+    write!(
+        f,
+        "{indicator}{start}• {title} {index}:{end}\n\r",
+        indicator = if targeted { "→" } else { "" },
+        end = ERASE_TO_LINE_END,
+    )
+}
+
+fn write_progress(
     f: &mut std::fmt::Formatter<'_>,
     courses: &Vec<Course>,
-    indent_level: usize,
+    start: String,
 ) -> std::fmt::Result {
     let mut accrued_creds: f32 = 0.0;
     let mut total_creds: f32 = 0.0;
@@ -82,7 +165,7 @@ fn print_progress(
         total_creds += course.max_credits();
         accrued_creds += course.sum_credits();
         match course.grade {
-            Grade::Completed(completed) => match completed {
+            Grade::Completed(passed) => match passed {
                 true => {}
                 false => {}
             },
@@ -98,88 +181,10 @@ fn print_progress(
     let average: f32 = grades.iter().sum::<usize>() as f32 / grades.len() as f32;
     write!(
         f,
-        "{leading}{avg_color}{average:.3}{RST}avg ‖ \
-        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{EOL}",
-        leading = indent(indent_level),
+        "{start}{avg_color}{average:.3}{RST}avg ‖ \
+        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{end}\n\r",
         cred_color = if accrued_creds > 0.0 { CYN } else { RED },
         avg_color = if !f32::is_nan(average) { CYN } else { RED },
+        end = ERASE_TO_LINE_END,
     )
-}
-
-impl Display for UniInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut all_courses: Vec<Course> = Vec::new();
-        let mut semester_courses: Vec<Course> = Vec::new();
-        let mut period_courses: Vec<Course> = Vec::new();
-        write!(
-            f,
-            "{BLD}{RED}Averages only include courses graded 3-5{RST}{EOL}"
-        )?;
-        for sem in &self.menu {
-            if self.cursor == Cursor::new(sem.index - 1, 0, 0, 0, 0, CursorLevel::Semester) {
-                write!(f, "→")?;
-            }
-            print_header(f, "Semester", sem.index, 0)?;
-            for (per_ix, period) in sem.periods.iter().enumerate() {
-                if self.cursor == Cursor::new(sem.index - 1, per_ix, 0, 0, 0, CursorLevel::Period) {
-                    write!(f, "→")?;
-                }
-                print_header(f, "Period", per_ix + 1, 1)?;
-                for (cor_ix, course) in period.iter().enumerate() {
-                    if self.cursor
-                        == Cursor::new(sem.index - 1, per_ix, cor_ix, 0, 0, CursorLevel::Course)
-                    {
-                        write!(f, "→")?;
-                    }
-                    write!(f, "{leading}{course}", leading = indent(2))?;
-                    if matches!(course.grade, Grade::Ongoing) {
-                        for (mom_ix, moment) in course.moments.iter().enumerate() {
-                            if self.cursor
-                                == Cursor::new(
-                                    sem.index - 1,
-                                    per_ix,
-                                    cor_ix,
-                                    mom_ix,
-                                    0,
-                                    CursorLevel::Moment,
-                                )
-                            {
-                                write!(f, "→")?;
-                            }
-                            write!(f, "{leading}{moment}", leading = indent(3))?;
-                            if let Some(tasks) = &moment.tasks {
-                                for (tsk_ix, (task_name, completed)) in tasks.iter().enumerate() {
-                                    if self.cursor
-                                        == Cursor::new(
-                                            sem.index - 1,
-                                            per_ix,
-                                            cor_ix,
-                                            mom_ix,
-                                            tsk_ix,
-                                            CursorLevel::Task,
-                                        )
-                                    {
-                                        write!(f, "→")?;
-                                    }
-                                    write!(
-                                        f,
-                                        "{leading}{marker}[{task_name}]{RST}{EOL}",
-                                        leading = indent(4),
-                                        marker = if *completed { STK } else { "" },
-                                    )?;
-                                }
-                            }
-                        }
-                    }
-                    period_courses.push(course.clone());
-                }
-                print_progress(f, &period_courses, 2)?;
-                semester_courses.append(&mut period_courses);
-            }
-            print_progress(f, &semester_courses, 1)?;
-            all_courses.append(&mut semester_courses);
-            write!(f, "{EOL}")?;
-        }
-        print_progress(f, &all_courses, 0)
-    }
 }
