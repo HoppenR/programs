@@ -3,7 +3,7 @@ mod uni_info;
 
 use std::env;
 use std::fs;
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 use uni_info::UniInfo;
 
 fn main() -> Result<(), Error> {
@@ -13,21 +13,12 @@ fn main() -> Result<(), Error> {
     //          Make a keypress that toggles it in UI/Key
     //          Make an impl that changes the bool UniInfo
     //          Use it in the Display for UniInfo to show all tasks
-    //
-    // TODO: Some way to add new entries
-    //       Targeting an entry and pressing ButtonAdd means to add something inside of it
-    //       An exception would be targetting a semester, because it makes no sense to add a period
-    //       and there would be no way to target the "menu" entry to create a semester
-    //       therefore adding on a semester entry creates a new semester
 
     // -- ARGS --
     let args: Vec<String> = env::args().collect();
-    let file_path: &str = args.get(1).ok_or_else(|| {
-        Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "usage: `cargo run <filepath>`",
-        )
-    })?;
+    let file_path: &str = args
+        .get(1)
+        .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "usage: `cargo run <filepath>`"))?;
 
     // -- DATA --
     let json_data: String = fs::read_to_string(file_path)?;

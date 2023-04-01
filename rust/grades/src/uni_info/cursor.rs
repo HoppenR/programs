@@ -12,13 +12,13 @@ pub(crate) enum CursorLevel {
 }
 
 #[derive(Deserialize, Clone, Copy, Default, PartialEq)]
-pub(crate) struct Cursor {
+pub(super) struct Cursor {
     pub(super) semester_ix: usize,
     pub(super) period_ix: usize,
     pub(super) course_ix: usize,
     pub(super) moment_ix: usize,
     pub(super) task_ix: usize,
-    pub(crate) level: CursorLevel,
+    pub(super) level: CursorLevel,
 }
 
 impl Cursor {

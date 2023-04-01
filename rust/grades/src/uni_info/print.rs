@@ -1,6 +1,8 @@
 use super::{cursor::Cursor, Course, CursorLevel, Grade, Moment, PrintableTask, UniInfo};
-use crate::ui::*;
-use std::fmt::Display;
+use crate::ui::term::{
+    BLD, BLU, CUR, CYN, ERASE_TO_DISP_END, ERASE_TO_LINE_END, GRN, RED, RST, STK, UDL, YLW,
+};
+use std::fmt::{self, Display, Formatter};
 
 const INDENT: &str = "    ";
 
@@ -9,7 +11,7 @@ fn indent(indent_level: usize) -> String {
 }
 
 impl Display for UniInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut all_courses: Vec<Course> = Vec::new();
         let mut semester_courses: Vec<Course> = Vec::new();
         let mut period_courses: Vec<Course> = Vec::new();
@@ -75,7 +77,7 @@ impl Display for UniInfo {
 }
 
 impl Display for Course {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let (color, symbol): (&str, char) = match self.grade {
             Grade::Completed(passed) => match passed {
                 true => (GRN, '✓'),
@@ -98,7 +100,7 @@ impl Display for Course {
 }
 
 impl Display for Moment {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{marker}[{code}] {YLW}{CUR}{description}{RST} {credits:.1}hp",
@@ -111,7 +113,7 @@ impl Display for Moment {
 }
 
 impl Display for PrintableTask {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{marker}{task_name}{RST}",
@@ -121,12 +123,7 @@ impl Display for PrintableTask {
     }
 }
 
-fn write_entry<T>(
-    f: &mut std::fmt::Formatter<'_>,
-    entry: T,
-    targeted: bool,
-    start: String,
-) -> std::fmt::Result
+fn write_entry<T>(f: &mut Formatter<'_>, entry: T, targeted: bool, start: String) -> fmt::Result
 where
     T: Display,
 {
@@ -139,12 +136,12 @@ where
 }
 
 fn write_header(
-    f: &mut std::fmt::Formatter<'_>,
+    f: &mut Formatter<'_>,
     title: &str,
     index: usize,
     targeted: bool,
     start: String,
-) -> std::fmt::Result {
+) -> fmt::Result {
     write!(
         f,
         "{indicator}{start}• {title} {index}:{end}\n\r",
@@ -153,11 +150,7 @@ fn write_header(
     )
 }
 
-fn write_progress(
-    f: &mut std::fmt::Formatter<'_>,
-    courses: &Vec<Course>,
-    start: String,
-) -> std::fmt::Result {
+fn write_progress(f: &mut Formatter<'_>, courses: &Vec<Course>, start: String) -> fmt::Result {
     let mut accrued_creds: f32 = 0.0;
     let mut total_creds: f32 = 0.0;
     let mut grades: Vec<usize> = Vec::new();
