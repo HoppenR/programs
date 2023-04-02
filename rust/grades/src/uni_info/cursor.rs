@@ -27,13 +27,15 @@ impl Cursor {
             CursorLevel::Period => self.level = CursorLevel::Course,
             CursorLevel::Course => self.level = CursorLevel::Moment,
             CursorLevel::Moment => self.level = CursorLevel::Task,
-            CursorLevel::Task => unreachable!(),
+            CursorLevel::Task => {}
         }
     }
 
     pub(super) fn exit(&mut self) {
         match self.level {
-            CursorLevel::Semester => unreachable!(),
+            CursorLevel::Semester => {
+                self.semester_ix = 0;
+            }
             CursorLevel::Period => {
                 self.level = CursorLevel::Semester;
                 self.period_ix = 0;

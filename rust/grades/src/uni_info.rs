@@ -83,33 +83,7 @@ impl UniInfo {
     }
 
     pub(super) fn cursor_exit(&mut self) {
-        match self.cursor.level {
-            CursorLevel::Semester => {}
-            _ => self.cursor.exit(),
-        }
-    }
-
-    pub(super) fn set_selected_course(&mut self, new_grade: Grade) {
-        if let Some(course) = self.sel_course_mut() {
-            course.grade = new_grade;
-        }
-    }
-
-    pub(super) fn toggle_selected_moment(&mut self) {
-        if let Some(moment) = self.sel_moment_mut() {
-            moment.completed.bitxor_assign(true);
-            // if let Some(tasks) = moment.tasks.as_mut() {
-            //     for (_, completion) in tasks {
-            //         *completion = moment.completed;
-            //     }
-            // }
-        }
-    }
-
-    pub(super) fn toggle_selected_task(&mut self) {
-        if let Some((_, completed)) = self.sel_task_mut() {
-            completed.bitxor_assign(true);
-        }
+        self.cursor.exit();
     }
 
     pub(super) fn add_semester(&mut self) {
@@ -173,27 +147,36 @@ impl UniInfo {
                 }
             }
             CursorLevel::Task => {
-                let ix: usize = self.cursor.task_ix;
-                let key: String = match self
-                    .sel_moment()
-                    .and_then(|x| x.tasks.as_ref())
-                    .and_then(|x| x.iter().nth(ix))
-                    .map(|x| x.0.clone())
-                {
-                    Some(key_str) => key_str,
-                    None => return,
-                };
-
-                if let Some(moment) = self.sel_moment_mut() {
-                    if let Some(tasks) = moment.tasks.as_mut() {
-                        tasks.retain(|n, _| *n != key);
-                        if tasks.is_empty() {
-                            moment.tasks = None;
-                            self.cursor.level = CursorLevel::Moment;
+                if let Some(key) = self.sel_task().map(|x| x.0.clone()) {
+                    if let Some(moment) = self.sel_moment_mut() {
+                        if let Some(tasks) = moment.tasks.as_mut() {
+                            tasks.retain(|n, _| *n != key);
+                            if tasks.is_empty() {
+                                moment.tasks = None;
+                            }
                         }
                     }
-                }
+                };
             }
+        }
+        self.cursor_exit();
+    }
+
+    pub(super) fn set_selected_course(&mut self, new_grade: Grade) {
+        if let Some(course) = self.sel_course_mut() {
+            course.grade = new_grade;
+        }
+    }
+
+    pub(super) fn toggle_selected_moment(&mut self) {
+        if let Some(moment) = self.sel_moment_mut() {
+            moment.completed.bitxor_assign(true);
+        }
+    }
+
+    pub(super) fn toggle_selected_task(&mut self) {
+        if let Some((_, completed)) = self.sel_task_mut() {
+            completed.bitxor_assign(true);
         }
     }
 
@@ -204,11 +187,29 @@ impl UniInfo {
         }
     }
 
+    fn sel_menu_mut(&mut self) -> Option<&mut Menu> {
+        Some(&mut self.menu)
+    }
+
+    fn sel_menu(&self) -> Option<&Menu> {
+        Some(&self.menu)
+    }
+
     fn sel_semester_entries(&self) -> usize {
         match self.sel_semester() {
             Some(semester) => semester.len(),
             _ => 0,
         }
+    }
+
+    fn sel_semester_mut(&mut self) -> Option<&mut Semester> {
+        let ix: usize = self.cursor.semester_ix;
+        self.sel_menu_mut()?.get_mut(ix)
+    }
+
+    fn sel_semester(&self) -> Option<&Semester> {
+        let ix: usize = self.cursor.semester_ix;
+        self.sel_menu()?.get(ix)
     }
 
     fn sel_period_entries(&self) -> usize {
@@ -218,11 +219,31 @@ impl UniInfo {
         }
     }
 
+    fn sel_period_mut(&mut self) -> Option<&mut Period> {
+        let ix: usize = self.cursor.period_ix;
+        self.sel_semester_mut()?.get_mut(ix)
+    }
+
+    fn sel_period(&self) -> Option<&Period> {
+        let ix: usize = self.cursor.period_ix;
+        self.sel_semester()?.get(ix)
+    }
+
     fn sel_course_entries(&self) -> usize {
         match self.sel_course() {
             Some(course) => course.moments.len(),
             _ => 0,
         }
+    }
+
+    fn sel_course_mut(&mut self) -> Option<&mut Course> {
+        let ix: usize = self.cursor.course_ix;
+        self.sel_period_mut()?.get_mut(ix)
+    }
+
+    fn sel_course(&self) -> Option<&Course> {
+        let ix: usize = self.cursor.course_ix;
+        self.sel_period()?.get(ix)
     }
 
     fn sel_moment_entries(&self) -> usize {
@@ -232,56 +253,19 @@ impl UniInfo {
         }
     }
 
-    fn sel_menu(&self) -> Option<&Menu> {
-        Some(&self.menu)
-    }
-
-    fn sel_semester(&self) -> Option<&Semester> {
-        self.sel_menu()?.get(self.cursor.semester_ix)
-    }
-
-    fn sel_period(&self) -> Option<&Period> {
-        self.sel_semester()?.get(self.cursor.period_ix)
-    }
-
-    fn sel_course(&self) -> Option<&Course> {
-        self.sel_period()?.get(self.cursor.course_ix)
-    }
-
-    fn sel_moment(&self) -> Option<&Moment> {
-        self.sel_course()?.moments.get(self.cursor.moment_ix)
-    }
-
-    // fn sel_task(&self) -> Option<(&String, &bool)> {
-    //     self.sel_moment()?
-    //         .tasks
-    //         .as_ref()?
-    //         .iter()
-    //         .nth(self.cursor.task_ix)
-    // }
-
-    fn sel_menu_mut(&mut self) -> Option<&mut Menu> {
-        Some(&mut self.menu)
-    }
-
-    fn sel_semester_mut(&mut self) -> Option<&mut Semester> {
-        let ix: usize = self.cursor.semester_ix;
-        self.sel_menu_mut()?.get_mut(ix)
-    }
-
-    fn sel_period_mut(&mut self) -> Option<&mut Period> {
-        let ix: usize = self.cursor.period_ix;
-        self.sel_semester_mut()?.get_mut(ix)
-    }
-
-    fn sel_course_mut(&mut self) -> Option<&mut Course> {
-        let ix: usize = self.cursor.course_ix;
-        self.sel_period_mut()?.get_mut(ix)
-    }
-
     fn sel_moment_mut(&mut self) -> Option<&mut Moment> {
         let ix: usize = self.cursor.moment_ix;
         self.sel_course_mut()?.moments.get_mut(ix)
+    }
+
+    fn sel_moment(&self) -> Option<&Moment> {
+        let ix: usize = self.cursor.moment_ix;
+        self.sel_course()?.moments.get(ix)
+    }
+
+    fn sel_task(&self) -> Option<(&String, &bool)> {
+        let ix: usize = self.cursor.task_ix;
+        self.sel_moment()?.tasks.as_ref()?.iter().nth(ix)
     }
 
     fn sel_task_mut(&mut self) -> Option<(&String, &mut bool)> {

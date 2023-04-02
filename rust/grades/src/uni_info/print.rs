@@ -10,6 +10,65 @@ fn indent(indent_level: usize) -> String {
     INDENT.repeat(indent_level)
 }
 
+fn write_entry<T>(f: &mut Formatter<'_>, entry: T, targeted: bool, start: String) -> fmt::Result
+where
+    T: Display,
+{
+    write!(
+        f,
+        "{indicator}{start}{entry}{end}\n\r",
+        indicator = if targeted { "→" } else { "" },
+        end = ERASE_TO_LINE_END,
+    )
+}
+
+fn write_header(
+    f: &mut Formatter<'_>,
+    title: &str,
+    index: usize,
+    targeted: bool,
+    start: String,
+) -> fmt::Result {
+    write!(
+        f,
+        "{indicator}{start}• {title} {index}:{end}\n\r",
+        indicator = if targeted { "→" } else { "" },
+        end = ERASE_TO_LINE_END,
+    )
+}
+
+fn write_progress(f: &mut Formatter<'_>, courses: &Vec<Course>, start: String) -> fmt::Result {
+    let mut accrued_creds: f32 = 0.0;
+    let mut total_creds: f32 = 0.0;
+    let mut grades: Vec<usize> = Vec::new();
+    for course in courses {
+        total_creds += course.max_credits();
+        accrued_creds += course.sum_credits();
+        match course.grade {
+            Grade::Completed(passed) => match passed {
+                true => {}
+                false => {}
+            },
+            Grade::Grade(grade) => match grade {
+                (3..=5) => {
+                    grades.push(grade);
+                }
+                _ => return Err(fmt::Error),
+            },
+            Grade::Ongoing => {}
+        }
+    }
+    let average: f32 = grades.iter().sum::<usize>() as f32 / grades.len() as f32;
+    write!(
+        f,
+        "{start}{avg_color}{average:.3}{RST}avg ‖ \
+        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{end}\n\r",
+        cred_color = if accrued_creds > 0.0 { CYN } else { RED },
+        avg_color = if !f32::is_nan(average) { CYN } else { RED },
+        end = ERASE_TO_LINE_END,
+    )
+}
+
 impl Display for UniInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut all_courses: Vec<Course> = Vec::new();
@@ -80,15 +139,15 @@ impl Display for Course {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let (color, symbol): (&str, char) = match self.grade {
             Grade::Completed(passed) => match passed {
-                true => (GRN, '✓'),
-                false => (RED, '✗'),
+                true => Ok((GRN, '✓')),
+                false => Ok((RED, '✗')),
             },
             Grade::Grade(grade) => match grade {
-                (3..=5) => (GRN, char::from_digit(grade as u32, 10).unwrap()),
-                _ => unreachable!(),
+                (3..=5) => Ok((GRN, char::from_digit(grade as u32, 10).unwrap())),
+                _ => Err(fmt::Error),
             },
-            Grade::Ongoing => (BLU, '…'),
-        };
+            Grade::Ongoing => Ok((BLU, '…')),
+        }?;
         write!(
             f,
             "[{color}{symbol}{RST}] {UDL}{code}{RST} {BLD}{BLU}{name}{RST} {credits:.1}hp",
@@ -121,63 +180,4 @@ impl Display for PrintableTask {
             task_name = self.name,
         )
     }
-}
-
-fn write_entry<T>(f: &mut Formatter<'_>, entry: T, targeted: bool, start: String) -> fmt::Result
-where
-    T: Display,
-{
-    write!(
-        f,
-        "{indicator}{start}{entry}{end}\n\r",
-        indicator = if targeted { "→" } else { "" },
-        end = ERASE_TO_LINE_END,
-    )
-}
-
-fn write_header(
-    f: &mut Formatter<'_>,
-    title: &str,
-    index: usize,
-    targeted: bool,
-    start: String,
-) -> fmt::Result {
-    write!(
-        f,
-        "{indicator}{start}• {title} {index}:{end}\n\r",
-        indicator = if targeted { "→" } else { "" },
-        end = ERASE_TO_LINE_END,
-    )
-}
-
-fn write_progress(f: &mut Formatter<'_>, courses: &Vec<Course>, start: String) -> fmt::Result {
-    let mut accrued_creds: f32 = 0.0;
-    let mut total_creds: f32 = 0.0;
-    let mut grades: Vec<usize> = Vec::new();
-    for course in courses {
-        total_creds += course.max_credits();
-        accrued_creds += course.sum_credits();
-        match course.grade {
-            Grade::Completed(passed) => match passed {
-                true => {}
-                false => {}
-            },
-            Grade::Grade(grade) => match grade {
-                (3..=5) => {
-                    grades.push(grade);
-                }
-                _ => unreachable!(),
-            },
-            Grade::Ongoing => {}
-        }
-    }
-    let average: f32 = grades.iter().sum::<usize>() as f32 / grades.len() as f32;
-    write!(
-        f,
-        "{start}{avg_color}{average:.3}{RST}avg ‖ \
-        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{end}\n\r",
-        cred_color = if accrued_creds > 0.0 { CYN } else { RED },
-        avg_color = if !f32::is_nan(average) { CYN } else { RED },
-        end = ERASE_TO_LINE_END,
-    )
 }
