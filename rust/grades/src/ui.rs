@@ -33,7 +33,7 @@ use term::{
 };
 
 pub(super) struct UI<'a> {
-    key: Key,
+    key: Key<'a>,
     old_termios: libc::termios,
     os: StdoutLock<'a>,
     uni: &'a mut UniInfo,
