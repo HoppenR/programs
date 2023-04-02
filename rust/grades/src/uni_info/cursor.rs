@@ -1,3 +1,33 @@
+//! Functions and structs for navigating through UniInfo
+//!
+//! This module contains functions for basic navigation around the `UniInfo`
+//! structures indented to be used both for representing a graphical cursor on
+//! screen as well as cursors created when iterating through the data.
+//!
+//! The less literal, "iterator" cursors can be used to compare with the main cursor
+//! to see if the current object is the currently targeted one in an iteration.
+//! This is why `Cursor` implements `Default` and `PartialEq`, as well as
+//! setting indexes back to 0 after backing up one level.
+//!
+//! # Usage
+//!
+//! An example of the usage is:
+//!
+//! ```
+//! fn my_func(uni: &UniInfo, course: &Course) {
+//!     for (ix, sem) in uni.menu.iter().enumerate() {
+//!         let cursor = Cursor {
+//!             semester_ix: ix,
+//!             level: CursorLevel::Semester,
+//!             ..Default::default()
+//!         };
+//!         if uni.cursor == cursor {
+//!             println!("This semester is currently targeted!");
+//!         }
+//!     }
+//! }
+//! ```
+
 use std::cmp;
 
 #[derive(Clone, Copy, Default, PartialEq)]
@@ -21,6 +51,7 @@ pub(super) struct Cursor {
 }
 
 impl Cursor {
+    /// Indents the cursor.
     pub(super) fn enter(&mut self) {
         match self.level {
             CursorLevel::Semester => self.level = CursorLevel::Period,
@@ -31,6 +62,7 @@ impl Cursor {
         }
     }
 
+    /// Unindents the cursor and sets the old level to 0 for future comparisons.
     pub(super) fn exit(&mut self) {
         match self.level {
             CursorLevel::Semester => {
@@ -55,6 +87,7 @@ impl Cursor {
         }
     }
 
+    /// Moves the cursor upward, unless already on the first object.
     pub(super) fn decrease(&mut self) {
         match self.level {
             CursorLevel::Semester => self.semester_ix = self.semester_ix.saturating_sub(1),
@@ -65,6 +98,7 @@ impl Cursor {
         }
     }
 
+    /// Moves the cursor downward, but prevents the cursor from reaching the `max` value.
     pub(super) fn increase(&mut self, max: usize) {
         match self.level {
             CursorLevel::Semester => self.semester_ix = cmp::min(self.semester_ix + 1, max - 1),

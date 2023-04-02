@@ -1,6 +1,27 @@
+//! Functions and data for representing a user keypress
+//!
+//! This module is intended to fully abstract away the idea of a terminal keypress
+//! and provides multiple functions for interpreting the keypress depending
+//! on the usage.
+//!
+//! # Usage
+//!
+//! An example of the usage is:
+//!
+//! ```
+//! let mut key = Key::new();
+//! key.read().unwrap();
+//! match key.as_printable_utf8() {
+//!     Some('ы') => println!("Key ы pressed!"),
+//!     None if key.is_esc() => println!("user wants to exit"),
+//!     _ => {},
+//! }
+//! ```
+
 use std::io::{self, Error, Read};
 use std::str;
 
+/// `Key` represents data from a keypress.
 pub(super) struct Key {
     data: [u8; 6],
 }
@@ -10,6 +31,7 @@ impl Key {
         Key { data: [0; 6] }
     }
 
+    /// Blocking read a keypress from standard input.
     pub(super) fn read(&mut self) -> Result<(), Error> {
         let bytes_read: usize = io::stdin().read(&mut self.data[..])?;
         if bytes_read == 0 {
@@ -21,6 +43,8 @@ impl Key {
         Ok(())
     }
 
+    /// Returns an optional character if the last keypress is representable
+    /// as a printable ascii-character.
     pub(super) fn as_printable_ascii(&self) -> Option<char> {
         if matches!(self.data, [b' '..=b'~', ..]) {
             return Some(self.data[0] as char);
@@ -28,6 +52,8 @@ impl Key {
         None
     }
 
+    /// Returns an optional character if the last keypress is representable
+    /// as a printable utf8-character.
     pub(super) fn as_printable_utf8(&self) -> Option<char> {
         match str::from_utf8(&self.data[..]) {
             Ok(data_str) => match data_str.chars().next() {
@@ -39,19 +65,18 @@ impl Key {
         }
     }
 
+    /// Reinterprets the first byte of the keypress as a char.
     pub(super) fn as_char_unchecked(&self) -> char {
         self.data[0] as char
     }
 
+    /// Checks whether the last keypress is the backspace or delete character.
+    /// `alacritty` and `xterm` will send `0x7f` and `0x08` respectively for this.
     pub(super) fn is_backspace(&self) -> bool {
-        match self.data {
-            // Backspace(8) on some terminals
-            // Delete(127) on others
-            [8, ..] | [127, ..] => true,
-            _ => false,
-        }
+        matches!(self.data, [8, ..] | [127, ..])
     }
 
+    /// Checks whether the last keypress is the enter (return) key.
     pub(super) fn is_enter(&self) -> bool {
         matches!(self.data, [b'\r', ..])
     }
@@ -60,18 +85,22 @@ impl Key {
         matches!(self.data, [27, b'\0', ..])
     }
 
+    /// Checks whether the last keypress is the up-arrow.
     pub(super) fn is_up(&self) -> bool {
         matches!(self.data, [27, b'[', b'A', ..])
     }
 
+    /// Checks whether the last keypress is the down-arrow.
     pub(super) fn is_down(&self) -> bool {
         matches!(self.data, [27, b'[', b'B', ..])
     }
 
+    /// Checks whether the last keypress is the right-arrow.
     pub(super) fn is_right(&self) -> bool {
         matches!(self.data, [27, b'[', b'C', ..])
     }
 
+    /// Checks whether the last keypress is the left-arrow.
     pub(super) fn is_left(&self) -> bool {
         matches!(self.data, [27, b'[', b'D', ..])
     }

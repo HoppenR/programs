@@ -1,8 +1,38 @@
-use super::{cursor::Cursor, Course, CursorLevel, Grade, Moment, PrintableTask, UniInfo};
-use crate::ui::term::{
-    BLD, BLU, CUR, CYN, ERASE_TO_DISP_END, ERASE_TO_LINE_END, GRN, RED, RST, STK, UDL, YLW,
-};
+//! Printing functions for the UniInfo objects
+//!
+//! This module contains the `Display` implementations for each of the
+//! objects in `uni_info`, as well as a helper struct `PrintableTask`.
+//! This helper struct implements the formatting trait for a key-pair tuple
+//! when iterating over a `BTreeMap` such as `Tasks`.
+//!
+//! The prints are designed with a terminal output in mind, always ending each
+//! line with a terminal escape sequence that clears the line in the terminal.
+//! After UniInfo is done printing it also tells the terminal to clear the rest
+//! of the terminal contents from the cursor to the end of the screen.
+//!
+//! # Usage
+//!
+//! An example of the usage is:
+//!
+//! ```
+//! fn my_func(uni: &UniInfo, course: &Course) {
+//!     let terminal_output = format!("{course}");
+//!     write!(std::io::stdout(), "{uni}").unwrap();
+//! }
+//! ```
+//!
+//! For invalid data it will simply tell the formatter to stop and return an uncategorized error.
+
+use super::{cursor::Cursor, Course, CursorLevel, Grade, Moment, UniInfo};
+use crate::ui::term::{BLD, BLU, CUR, CYN, GRN, RED, RST, STK, UDL, YLW};
+use crate::ui::term::{ERASE_TO_DISP_END, ERASE_TO_LINE_END};
 use std::fmt::{self, Display, Formatter};
+
+/// Helper struct to implement Display for a tuple when iterating over `Tasks`.
+struct PrintableTask {
+    name: String,
+    completed: bool,
+}
 
 const INDENT: &str = "    ";
 
@@ -10,6 +40,8 @@ fn indent(indent_level: usize) -> String {
     INDENT.repeat(indent_level)
 }
 
+/// Writes and formats a `uni_info` object using their `Display` implementations.
+/// The leading indentation is given in the `start` parameter.
 fn write_entry<T>(f: &mut Formatter<'_>, entry: T, targeted: bool, start: String) -> fmt::Result
 where
     T: Display,
@@ -22,6 +54,8 @@ where
     )
 }
 
+/// Writes and formats a string header in the menu.
+/// The leading indentation is given in the `start` parameter.
 fn write_header(
     f: &mut Formatter<'_>,
     title: &str,
@@ -37,6 +71,9 @@ fn write_header(
     )
 }
 
+/// Writes and formats the average grade of the `courses` parameter,
+/// as well as its current and total credits.
+/// The leading indentation is given in the `start` parameter.
 fn write_progress(f: &mut Formatter<'_>, courses: &Vec<Course>, start: String) -> fmt::Result {
     let mut accrued_creds: f32 = 0.0;
     let mut total_creds: f32 = 0.0;
@@ -143,7 +180,10 @@ impl Display for Course {
                 false => Ok((RED, '✗')),
             },
             Grade::Grade(grade) => match grade {
-                (3..=5) => Ok((GRN, char::from_digit(grade as u32, 10).unwrap())),
+                (3..=5) => {
+                    let grade_ch: char = (grade as u8 + b'0') as char;
+                    Ok((GRN, grade_ch))
+                }
                 _ => Err(fmt::Error),
             },
             Grade::Ongoing => Ok((BLU, '…')),
@@ -179,5 +219,15 @@ impl Display for PrintableTask {
             marker = if self.completed { STK } else { "" },
             task_name = self.name,
         )
+    }
+}
+
+/// Helper function to convert a key-value pair from a `Tasks` object.
+impl From<(&String, &bool)> for PrintableTask {
+    fn from(value: (&String, &bool)) -> Self {
+        PrintableTask {
+            name: value.0.clone(),
+            completed: *value.1,
+        }
     }
 }
