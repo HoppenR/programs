@@ -44,11 +44,16 @@ impl Key {
     }
 
     pub(super) fn is_backspace(&self) -> bool {
-        matches!(self.data, [127, ..])
+        match self.data {
+            // Backspace(8) on some terminals
+            // Delete(127) on others
+            [8, ..] | [127, ..] => true,
+            _ => false,
+        }
     }
 
     pub(super) fn is_enter(&self) -> bool {
-        matches!(self.data, [13, ..])
+        matches!(self.data, [b'\r', ..])
     }
 
     pub(super) fn is_esc(&self) -> bool {
