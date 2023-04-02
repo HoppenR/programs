@@ -8,11 +8,17 @@ use uni_info::UniInfo;
 
 fn main() -> Result<(), Error> {
     // TODO[?]: Add keypress for toggling show_all/show_noncomplete
-    //          Add bool to UniInfo
-    //          Tell SerDe to ignore it
-    //          Make a keypress that toggles it in UI/Key
-    //          Make an impl that changes the bool UniInfo
-    //          Use it in the Display for UniInfo to show all tasks
+    //          - Add bool to UniInfo
+    //          - Tell SerDe to ignore it
+    //          - Make a keypress that toggles it in UI/Key
+    //          - Make an impl that changes the bool UniInfo
+    //          - Use it in the Display for UniInfo to show all tasks
+    //
+    // TODO[ ]: Better movement / handling when deleting the last of something
+    //          also update cursor position
+    //
+    // TODO[ ]: Only format/print the area of uni_info around the cursor.
+    //          Maybe use some sort of variable to track offset?
 
     // -- ARGS --
     let args: Vec<String> = env::args().collect();
