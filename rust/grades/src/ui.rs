@@ -37,14 +37,10 @@ fn read_line(key: &mut Key) -> Result<String, Error> {
     let mut line = String::new();
     loop {
         key.read()?;
-        match key.as_char() {
-            Some('!'..='~') => {
-                line.push(key.as_char_unchecked());
-                write!(stdout(), "{}", key.as_char_unchecked())?;
-            }
-            None if key.is_space() => {
-                line.push(' ');
-                write!(stdout(), " ")?;
+        match key.as_printable_utf8() {
+            Some(ch) => {
+                line.push(ch);
+                write!(stdout(), "{}", ch)?;
             }
             None if key.is_backspace() => {
                 if line.pop().is_none() {
@@ -63,11 +59,11 @@ fn read_line(key: &mut Key) -> Result<String, Error> {
 fn construct_grade(key: &mut Key) -> Result<Option<Grade>, Error> {
     prompt_line("Enter type [c]ompleted [g]rade [o]ngoing")?;
     key.read()?;
-    match key.as_char() {
+    match key.as_printable_ascii() {
         Some('c') => {
             prompt_line("Enter value [p]assed [f]ailed")?;
             key.read()?;
-            match key.as_char() {
+            match key.as_printable_ascii() {
                 Some('p') => Ok(Some(Grade::Completed(true))),
                 Some('f') => Ok(Some(Grade::Completed(false))),
                 _ => Ok(None),
@@ -76,7 +72,7 @@ fn construct_grade(key: &mut Key) -> Result<Option<Grade>, Error> {
         Some('g') => {
             prompt_line("Enter value [3] [4] [5]")?;
             key.read()?;
-            if matches!(&key.as_char(), Some('3'..='5')) {
+            if matches!(&key.as_printable_ascii(), Some('3'..='5')) {
                 let grade: usize = key.as_char_unchecked().to_digit(10).unwrap() as usize;
                 return Ok(Some(Grade::Grade(grade)));
             }
@@ -143,14 +139,25 @@ fn edit_entry(uni: &mut UniInfo, key: &mut Key) -> Result<(), Error> {
     Ok(())
 }
 
+fn show_keybinds(uni: &UniInfo) -> Result<(), Error> {
+    match uni.cursor_level() {
+        CursorLevel::Semester => prompt_line("[a]dd semester [d]elete semester"),
+        CursorLevel::Period => prompt_line(""),
+        CursorLevel::Course => prompt_line("[e]dit grade [a]dd moment [d]elete course"),
+        CursorLevel::Moment => prompt_line("[e]dit completion [a]dd task [d]elete moment"),
+        CursorLevel::Task => prompt_line("[e]dit completion [d]elete task"),
+    }
+}
+
 pub(super) fn ui_loop(uni: &mut UniInfo) -> Result<(), Error> {
     let mut key = Key::new();
     loop {
         write!(stdout(), "{}", CURS_HOME)?;
         write!(stdout(), "{uni}")?;
+        show_keybinds(uni)?;
         stdout().flush()?;
         key.read()?;
-        match key.as_char() {
+        match key.as_printable_ascii() {
             Some('a') => add_entry(uni, &mut key)?,
             Some('d') => uni.delete_entry(),
             Some('e') => edit_entry(uni, &mut key)?,

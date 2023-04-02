@@ -9,7 +9,7 @@ use std::ops::BitXorAssign;
 #[derive(Deserialize, Serialize)]
 pub(super) struct UniInfo {
     menu: Menu,
-    #[serde(default, skip_serializing)]
+    #[serde(skip)]
     cursor: Cursor,
 }
 type Menu = Vec<Semester>;
@@ -189,6 +189,7 @@ impl UniInfo {
                         tasks.retain(|n, _| *n != key);
                         if tasks.is_empty() {
                             moment.tasks = None;
+                            self.cursor.level = CursorLevel::Moment;
                         }
                     }
                 }

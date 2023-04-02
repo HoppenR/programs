@@ -1,7 +1,6 @@
-use serde::Deserialize;
 use std::cmp;
 
-#[derive(Deserialize, Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub(crate) enum CursorLevel {
     #[default]
     Semester,
@@ -11,7 +10,7 @@ pub(crate) enum CursorLevel {
     Task,
 }
 
-#[derive(Deserialize, Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub(super) struct Cursor {
     pub(super) semester_ix: usize,
     pub(super) period_ix: usize,
