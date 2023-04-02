@@ -1,3 +1,26 @@
+//! An object that provides a terminal user interface input and output
+//!
+//! This module contains a struct that is meant to fully own the terminal
+//! output and input for the duration of its lifetime.
+//! It is intended to print a `UniInfo` object and provide keybindings for
+//! navigating and interacting with it in a user friendly manner.
+//! It also integrates well with the interface of the `uni_info` module.
+//!
+//! The design goal is to be fully error safe, and tries to always restore the
+//! terminal to a normal state whenever the `UI` object goes out of scope through
+//! the `Drop` trait. Which is why the `main_loop` function takes ownership of,
+//! and drops the object when it exits.
+//!
+//! # Usage
+//!
+//! An example of the intended usage is:
+//!
+//! ```
+//! let ui = UI::new(&mut uni).unwrap();
+//! ui.main_loop().unwrap();
+//! println!("Normal terminal is back!");
+//! ```
+
 mod key;
 pub(super) mod term;
 
@@ -18,16 +41,14 @@ pub(super) struct UI<'a> {
 
 impl<'a> Drop for UI<'a> {
     fn drop(&mut self) {
-        unsafe { term::set_noraw(&mut self.old_termios) };
-        write!(self.os, "{}", CURS_VIS).unwrap();
-        write!(self.os, "{}", BUF_CLR).unwrap();
-        write!(self.os, "{}", CURS_HOME).unwrap();
-        write!(self.os, "{}", BUF_PRI).unwrap();
-        self.os.flush().unwrap();
+        if self.finish().is_err() {
+            panic!("Error restoring terminal in UI::drop");
+        }
     }
 }
 
 impl<'a> UI<'a> {
+    /// Sets up the terminal for the user interface, and creates a `UI` instance.
     pub(super) fn new(uni: &'a mut UniInfo) -> Result<Self, Error> {
         let mut os: StdoutLock = io::stdout().lock();
         write!(os, "{}", BUF_ALT)?;
@@ -44,7 +65,18 @@ impl<'a> UI<'a> {
         })
     }
 
-    pub(super) fn main_loop(&mut self) -> Result<(), Error> {
+    /// Resets the terminal to the state prior to the `UI` instance creation.
+    fn finish(&mut self) -> Result<(), Error> {
+        unsafe { term::set_noraw(&self.old_termios) };
+        write!(self.os, "{}", CURS_VIS)?;
+        write!(self.os, "{}", BUF_CLR)?;
+        write!(self.os, "{}", CURS_HOME)?;
+        write!(self.os, "{}", BUF_PRI)?;
+        self.os.flush()
+    }
+
+    /// Takes ownership of the `UI` instance, effectively dropping it.
+    pub(super) fn main_loop(mut self) -> Result<(), Error> {
         loop {
             write!(self.os, "{}", CURS_HOME)?;
             write!(self.os, "{}", self.uni)?;
@@ -72,14 +104,14 @@ impl<'a> UI<'a> {
         Ok(())
     }
 
+    /// Prompt the user for information regarding the creation of the currently
+    /// targeted menu entry. Silently returns `Ok` on bad user input.
     fn add_entry(&mut self) -> Result<(), Error> {
         match self.uni.cursor_level() {
             CursorLevel::Semester => {
-                // Add semester + periods
                 self.uni.add_semester();
             }
             CursorLevel::Period => {
-                // Add course
                 self.prompt_line("Enter code: ")?;
                 let code: String = self.read_line()?;
                 self.prompt_line("Enter credits: ")?;
@@ -91,7 +123,6 @@ impl<'a> UI<'a> {
                 }
             }
             CursorLevel::Course => {
-                // Add moment
                 self.prompt_line("Enter code: ")?;
                 let code: String = self.read_line()?;
                 self.prompt_line("Enter credits: ")?;
@@ -103,7 +134,6 @@ impl<'a> UI<'a> {
                 }
             }
             CursorLevel::Moment => {
-                // Add task
                 self.prompt_line("Enter name: ")?;
                 let name: String = self.read_line()?;
                 self.uni.add_task(name);
@@ -113,6 +143,8 @@ impl<'a> UI<'a> {
         Ok(())
     }
 
+    /// Prompt the user for information regarding the creation of a new `Grade`
+    /// object. Silently returns `Ok` on bad user input.
     fn construct_grade(&mut self) -> Result<Option<Grade>, Error> {
         self.prompt_line("Enter type [c]ompleted [g]rade [o]ngoing")?;
         self.key.read()?;
@@ -130,7 +162,7 @@ impl<'a> UI<'a> {
                 self.prompt_line("Enter value [3] [4] [5]")?;
                 self.key.read()?;
                 if matches!(self.key.as_printable_ascii(), Some('3'..='5')) {
-                    let grade: usize = self.key.as_char_unchecked().to_digit(10).unwrap() as usize;
+                    let grade: usize = self.key.as_char_unchecked() as usize - '0' as usize;
                     return Ok(Some(Grade::Grade(grade)));
                 }
                 Ok(None)
@@ -140,6 +172,9 @@ impl<'a> UI<'a> {
         }
     }
 
+    /// Manipulates the currently targeted entry, whereever possible.
+    /// For entries that requires more information to edit, it prompts the user.
+    /// Silently returns `Ok` on bad user input.
     fn edit_entry(&mut self) -> Result<(), Error> {
         match self.uni.cursor_level() {
             CursorLevel::Semester => {}
@@ -155,11 +190,13 @@ impl<'a> UI<'a> {
         Ok(())
     }
 
+    /// Replace the current line with the prompt in `text`.
     fn prompt_line(&mut self, text: &str) -> Result<(), Error> {
         write!(self.os, "\r{text}{end}", end = ERASE_TO_LINE_END)?;
         self.os.flush()
     }
 
+    /// Read printable utf-8 text until the user presses enter.
     fn read_line(&mut self) -> Result<String, Error> {
         let mut line = String::new();
         loop {

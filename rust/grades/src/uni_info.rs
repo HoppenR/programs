@@ -1,10 +1,39 @@
+//! An object that provides data for manipulating University Info data
+//!
+//! This module contains a struct representing University Info that is meant
+//! to be serialized from JSON using `SerDe`. It is meant to fully represent the
+//! state of a menu with the data, and provides convenient bindings meant for
+//! accessing and manipulating it soloely through a cursor.
+//!
+//! # Usage
+//!
+//! Examples of the usage is:
+//!
+//! ```
+//! fn delete_parent_entry(uni: &mut UniInfo) {
+//!     uni.cursor_exit();
+//!     uni.delete_entry();
+//! }
+//! ```
+//!
+//! ```
+//! fn add_task(uni: &mut UniInfo) {
+//!     assert!(uni.cursor_level() == CursorLevel::Course);
+//!     uni.cursor_enter();
+//!     uni.add_task("Do the dishes!".to_string());
+//! }
+//! ```
+//!
+//! Even though the functions are designed to be failsafe, they might however
+//! not make sense when you try to modify an object that does not relate to the
+//! cursors position. In which case the data changes might be unexpected.
+
 pub(super) mod cursor;
 mod print;
 
 use cursor::{Cursor, CursorLevel};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::ops::BitXorAssign;
 
 #[derive(Deserialize, Serialize)]
 pub(super) struct UniInfo {
@@ -40,17 +69,14 @@ struct Moment {
     tasks: Option<Tasks>,
 }
 type Tasks = BTreeMap<String, bool>;
-// Helper struct to implement Display for a tuple when iterating over `Tasks`
-struct PrintableTask {
-    name: String,
-    completed: bool,
-}
 
 impl UniInfo {
     pub(super) fn cursor_level(&self) -> CursorLevel {
         self.cursor.level
     }
 
+    /// Moves the cursor down, increasing the index up to the amount of
+    /// entries on the current cursor level.
     pub(super) fn cursor_increase(&mut self) {
         let max_value: usize = match self.cursor.level {
             CursorLevel::Semester => self.sel_menu_entries(),
@@ -62,10 +88,13 @@ impl UniInfo {
         self.cursor.increase(max_value);
     }
 
+    /// Moves the cursor up, decreasing the index down until, and including, 0.
     pub(super) fn cursor_decrease(&mut self) {
         self.cursor.decrease();
     }
 
+    /// Indents the cursor depending on if there are any objects that should
+    /// be printable on the indented cursor level.
     pub(super) fn cursor_enter(&mut self) {
         let num_entries_next_level: usize = match self.cursor.level {
             CursorLevel::Semester => self.sel_semester_entries(),
@@ -82,6 +111,7 @@ impl UniInfo {
         }
     }
 
+    /// Unindents the cursor.
     pub(super) fn cursor_exit(&mut self) {
         self.cursor.exit();
     }
@@ -125,6 +155,7 @@ impl UniInfo {
         }
     }
 
+    /// Delete the currently targeted entry.
     pub(super) fn delete_entry(&mut self) {
         match self.cursor.level {
             CursorLevel::Semester => {
@@ -162,21 +193,24 @@ impl UniInfo {
         self.cursor_exit();
     }
 
+    /// Sets the `grade` of the currently targeted `course` to `new_grade`.
     pub(super) fn set_selected_course(&mut self, new_grade: Grade) {
         if let Some(course) = self.sel_course_mut() {
             course.grade = new_grade;
         }
     }
 
+    /// Toggles the completion of the currently selected moment on/off.
     pub(super) fn toggle_selected_moment(&mut self) {
         if let Some(moment) = self.sel_moment_mut() {
-            moment.completed.bitxor_assign(true);
+            moment.completed ^= true;
         }
     }
 
+    /// Toggles the completion of the currently selected task on/off.
     pub(super) fn toggle_selected_task(&mut self) {
         if let Some((_, completed)) = self.sel_task_mut() {
-            completed.bitxor_assign(true);
+            *completed ^= true;
         }
     }
 
@@ -275,6 +309,7 @@ impl UniInfo {
 }
 
 impl Course {
+    /// Sums the accrued credits.
     fn sum_credits(&self) -> f32 {
         return self
             .moments
@@ -283,24 +318,17 @@ impl Course {
             .sum();
     }
 
+    /// Sums the maximum posssible.
     fn max_credits(&self) -> f32 {
         return self.moments.iter().map(|v| v.credits).sum();
     }
 
+    /// Returns whether the child moments should be visible on screen.
     fn should_print_moments(&self) -> bool {
         match self.grade {
             Grade::Ongoing => true,
             Grade::Completed(passed) => !passed,
             Grade::Grade(_) => false,
-        }
-    }
-}
-
-impl From<(&String, &bool)> for PrintableTask {
-    fn from(value: (&String, &bool)) -> Self {
-        PrintableTask {
-            name: value.0.clone(),
-            completed: *value.1,
         }
     }
 }
