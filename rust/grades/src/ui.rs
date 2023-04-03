@@ -28,9 +28,8 @@ use crate::uni_info::cursor::CursorLevel;
 use crate::uni_info::{Grade, UniInfo};
 use key::Key;
 use std::io::{self, Error, StdoutLock, Write};
-use term::{
-    BUF_ALT, BUF_CLR, BUF_PRI, CURS_HOME, CURS_INVIS, CURS_LEFT, CURS_VIS, ERASE_TO_LINE_END,
-};
+use term::{BUF_ALT, BUF_CLR, BUF_PRI, ERASE_TO_LINE_END};
+use term::{CURS_HOME, CURS_INVIS, CURS_LEFT, CURS_VIS};
 
 pub(super) struct UI<'a> {
     key: Key<'a>,
@@ -84,18 +83,22 @@ impl<'a> UI<'a> {
             self.os.flush()?;
             self.key.read()?;
             match self.key.as_printable_ascii() {
+                Some(' ') => {
+                    self.edit_entry()?;
+                    self.uni.cursor_down();
+                }
                 Some('a') => self.add_entry()?,
                 Some('d') => self.uni.delete_entry(),
                 Some('e') => self.edit_entry()?,
                 Some('h') => self.uni.cursor_exit(),
-                Some('j') => self.uni.cursor_increase(),
-                Some('k') => self.uni.cursor_decrease(),
+                Some('j') => self.uni.cursor_down(),
+                Some('k') => self.uni.cursor_up(),
                 Some('l') => self.uni.cursor_enter(),
                 Some('q') => break,
                 None if self.key.is_enter() => self.edit_entry()?,
                 None if self.key.is_left() => self.uni.cursor_exit(),
-                None if self.key.is_down() => self.uni.cursor_increase(),
-                None if self.key.is_up() => self.uni.cursor_decrease(),
+                None if self.key.is_down() => self.uni.cursor_down(),
+                None if self.key.is_up() => self.uni.cursor_up(),
                 None if self.key.is_right() => self.uni.cursor_enter(),
                 None if self.key.is_esc() => break,
                 _ => {}
@@ -130,7 +133,9 @@ impl<'a> UI<'a> {
                 self.prompt_line("Enter description: ")?;
                 let description: String = self.read_line()?;
                 if let Ok(credits) = credits_str.parse() {
-                    self.uni.add_moment(code, credits, description);
+                    if credits >= 0.0 {
+                        self.uni.add_moment(code, credits, description);
+                    }
                 }
             }
             CursorLevel::Moment => {

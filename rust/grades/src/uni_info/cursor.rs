@@ -88,7 +88,7 @@ impl Cursor {
     }
 
     /// Moves the cursor upward, unless already on the first object.
-    pub(super) fn decrease(&mut self) {
+    pub(super) fn up(&mut self) {
         match self.level {
             CursorLevel::Semester => self.semester_ix = self.semester_ix.saturating_sub(1),
             CursorLevel::Period => self.period_ix = self.period_ix.saturating_sub(1),
@@ -99,7 +99,7 @@ impl Cursor {
     }
 
     /// Moves the cursor downward, but prevents the cursor from reaching the `max` value.
-    pub(super) fn increase(&mut self, max: usize) {
+    pub(super) fn down(&mut self, max: usize) {
         match self.level {
             CursorLevel::Semester => self.semester_ix = cmp::min(self.semester_ix + 1, max - 1),
             CursorLevel::Period => self.period_ix = cmp::min(self.period_ix + 1, max - 1),

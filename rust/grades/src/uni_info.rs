@@ -37,6 +37,7 @@ use std::collections::BTreeMap;
 
 #[derive(Deserialize, Serialize)]
 pub(super) struct UniInfo {
+    #[serde(default)]
     menu: Menu,
     #[serde(skip)]
     cursor: Cursor,
@@ -70,6 +71,8 @@ struct Moment {
 }
 type Tasks = BTreeMap<String, bool>;
 
+/// A struct that represents university info, as well as data and bindings to
+/// navigate a menu of its data members.
 impl UniInfo {
     pub(super) fn cursor_level(&self) -> CursorLevel {
         self.cursor.level
@@ -77,7 +80,7 @@ impl UniInfo {
 
     /// Moves the cursor down, increasing the index up to the amount of
     /// entries on the current cursor level.
-    pub(super) fn cursor_increase(&mut self) {
+    pub(super) fn cursor_down(&mut self) {
         let max_value: usize = match self.cursor.level {
             CursorLevel::Semester => self.sel_menu_entries(),
             CursorLevel::Period => self.sel_semester_entries(),
@@ -85,12 +88,12 @@ impl UniInfo {
             CursorLevel::Moment => self.sel_course_entries(),
             CursorLevel::Task => self.sel_moment_entries(),
         };
-        self.cursor.increase(max_value);
+        self.cursor.down(max_value);
     }
 
     /// Moves the cursor up, decreasing the index down until, and including, 0.
-    pub(super) fn cursor_decrease(&mut self) {
-        self.cursor.decrease();
+    pub(super) fn cursor_up(&mut self) {
+        self.cursor.up();
     }
 
     /// Indents the cursor depending on if there are any objects that should
@@ -157,25 +160,28 @@ impl UniInfo {
 
     /// Delete the currently targeted entry.
     pub(super) fn delete_entry(&mut self) {
-        match self.cursor.level {
+        let should_exit: bool = match self.cursor.level {
             CursorLevel::Semester => {
                 let ix: usize = self.cursor.semester_ix;
                 if let Some(menu) = self.sel_menu_mut() {
                     menu.remove(ix);
                 }
+                self.sel_menu_entries() == 0
             }
-            CursorLevel::Period => {}
+            CursorLevel::Period => false,
             CursorLevel::Course => {
                 let ix: usize = self.cursor.course_ix;
                 if let Some(period) = self.sel_period_mut() {
                     period.remove(ix);
                 }
+                self.sel_period_entries() == 0
             }
             CursorLevel::Moment => {
                 let ix: usize = self.cursor.moment_ix;
                 if let Some(course) = self.sel_course_mut() {
                     course.moments.remove(ix);
                 }
+                self.sel_course_entries() == 0
             }
             CursorLevel::Task => {
                 if let Some(key) = self.sel_task().map(|x| x.0.clone()) {
@@ -187,10 +193,15 @@ impl UniInfo {
                             }
                         }
                     }
-                };
+                }
+                self.sel_moment_entries() == 0
             }
+        };
+        if should_exit {
+            self.cursor_exit();
+        } else {
+            self.cursor.up();
         }
-        self.cursor_exit();
     }
 
     /// Sets the `grade` of the currently targeted `course` to `new_grade`.
