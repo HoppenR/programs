@@ -27,14 +27,12 @@ pub(super) mod term;
 use crate::uni_info::cursor::CursorLevel;
 use crate::uni_info::{Grade, UniInfo};
 use key::Key;
-use std::io::{self, Error, StdoutLock, Write};
-use term::{BUF_ALT, BUF_CLR, BUF_PRI, ERASE_TO_LINE_END};
-use term::{CURS_HOME, CURS_INVIS, CURS_LEFT, CURS_VIS};
+use std::io::Error;
+use term::Term;
 
 pub(super) struct UI<'a> {
     key: Key<'a>,
-    old_termios: libc::termios,
-    os: StdoutLock<'a>,
+    term: Term<'a>,
     uni: &'a mut UniInfo,
 }
 
@@ -49,38 +47,33 @@ impl<'a> Drop for UI<'a> {
 impl<'a> UI<'a> {
     /// Sets up the terminal for the user interface, and creates a `UI` instance.
     pub(super) fn new(uni: &'a mut UniInfo) -> Result<Self, Error> {
-        let mut os: StdoutLock = io::stdout().lock();
-        write!(os, "{}", BUF_ALT)?;
-        write!(os, "{}", BUF_CLR)?;
-        write!(os, "{}", CURS_HOME)?;
-        write!(os, "{}", CURS_INVIS)?;
-        let old_termios: libc::termios = unsafe { term::set_raw() };
-        os.flush()?;
-        Ok(UI {
-            key: Key::new(),
-            old_termios,
-            os,
-            uni,
-        })
+        let key = Key::new();
+        let mut term = Term::new();
+        term.set_raw();
+        term.switch_alternate_buffer()?;
+        term.clear_buffer()?;
+        term.reset_cursor_pos()?;
+        term.hide_cursor()?;
+        term.flush()?;
+        Ok(UI { key, term, uni })
     }
 
     /// Resets the terminal to the state prior to the `UI` instance creation.
     fn finish(&mut self) -> Result<(), Error> {
-        unsafe { term::set_noraw(&self.old_termios) };
-        write!(self.os, "{}", CURS_VIS)?;
-        write!(self.os, "{}", BUF_CLR)?;
-        write!(self.os, "{}", CURS_HOME)?;
-        write!(self.os, "{}", BUF_PRI)?;
-        self.os.flush()
+        self.term.show_cursor()?;
+        self.term.clear_buffer()?;
+        self.term.reset_cursor_pos()?;
+        self.term.switch_primary_buffer()?;
+        self.term.flush()
     }
 
     /// Takes ownership of the `UI` instance, effectively dropping it.
     pub(super) fn main_loop(mut self) -> Result<(), Error> {
         loop {
-            write!(self.os, "{}", CURS_HOME)?;
-            write!(self.os, "{}", self.uni)?;
+            self.term.reset_cursor_pos()?;
+            self.term.write(self.uni)?;
             self.show_keybinds()?;
-            self.os.flush()?;
+            self.term.flush()?;
             self.key.read()?;
             match self.key.as_printable_ascii() {
                 Some(' ') => {
@@ -197,8 +190,10 @@ impl<'a> UI<'a> {
 
     /// Replace the current line with the prompt in `text`.
     fn prompt_line(&mut self, text: &str) -> Result<(), Error> {
-        write!(self.os, "\r{text}{end}", end = ERASE_TO_LINE_END)?;
-        self.os.flush()
+        self.term.move_cursor_line_begin()?;
+        self.term.write(&text)?;
+        self.term.erase_to_line_end()?;
+        self.term.flush()
     }
 
     /// Read printable utf-8 text until the user presses enter.
@@ -209,18 +204,19 @@ impl<'a> UI<'a> {
             match self.key.as_printable_utf8() {
                 Some(ch) => {
                     line.push(ch);
-                    write!(self.os, "{}", ch)?;
+                    self.term.write(&ch)?;
                 }
                 None if self.key.is_backspace() => {
                     if line.pop().is_none() {
                         continue;
                     }
-                    write!(self.os, "{}{end}", CURS_LEFT, end = ERASE_TO_LINE_END)?;
+                    self.term.move_cursor_left()?;
+                    self.term.erase_to_line_end()?;
                 }
                 None if self.key.is_enter() => break,
                 _ => {}
             }
-            self.os.flush()?;
+            self.term.flush()?;
         }
         Ok(line)
     }

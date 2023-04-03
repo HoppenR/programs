@@ -60,10 +60,9 @@ pub(super) struct Key<'a> {
 
 impl<'a> Key<'a> {
     pub(super) fn new() -> Self {
-        let is: StdinLock = io::stdin().lock();
         Key {
             data: [0; 6],
-            is,
+            is: io::stdin().lock(),
             rd: 0,
         }
     }
