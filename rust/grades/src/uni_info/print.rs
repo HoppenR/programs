@@ -23,7 +23,8 @@
 //!
 //! For invalid data it will simply tell the formatter to stop and return an uncategorized error.
 
-use super::{cursor::Cursor, Course, CursorLevel, Grade, Moment, UniInfo};
+use super::cursor::Cursor;
+use super::{Course, CursorLevel, Grade, Moment, UniInfo};
 use crate::ui::term::{BLD, BLU, CUR, CYN, GRN, RED, RST, STK, UDL, YLW};
 use crate::ui::term::{ERASE_TO_DISP_END, ERASE_TO_LINE_END};
 use std::fmt::{self, Display, Formatter};

@@ -83,10 +83,8 @@ impl<'a> Key<'a> {
     /// Returns an optional character if the last keypress is representable
     /// as a printable ascii-character.
     pub(super) fn as_printable_ascii(&self) -> Option<char> {
-        if self.rd == 1 {
-            if matches!(self.data[0], b' '..=b'~') {
-                return Some(self.data[0] as char);
-            }
+        if self.rd == 1 && matches!(self.data[0], b' '..=b'~') {
+            return Some(self.data[0] as char);
         }
         None
     }

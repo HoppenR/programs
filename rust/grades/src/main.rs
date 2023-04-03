@@ -21,8 +21,7 @@ macro_rules! err_usage {
 
 // TODO[ ]: Only format/print the area of uni_info around the cursor.
 //          Maybe use some sort of variable to track offset?
-//
-// TODO[ ]: Validate data in the UniInfo::add_* functions
+//          Some sort of view port?
 
 /// Run the editing program, reading the file at command line arg 1.
 /// Saves the JSON data back to disk if no errors occur.

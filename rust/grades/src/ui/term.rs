@@ -61,12 +61,13 @@ pub(super) const CURS_VIS: &str = "\x1b[?25h";
 /// Move the cursor one step to the left.
 pub(super) const CURS_LEFT: &str = "\x1b[D";
 
-/// Resets the terminal to the `termios` it had before `set_raw` was called.
+/// Resets the terminal to the terminal I/O interfaces settings in `termios`.
 pub(super) unsafe fn set_noraw(old_termios: &libc::termios) {
     libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, old_termios);
 }
 
-/// Sets the terminal into raw-mode.
+/// Sets the terminal into raw-mode. Returns the terminal I/O interfaces settings
+/// that can be used to restore the terminal after it is finished being used raw.
 pub(super) unsafe fn set_raw() -> libc::termios {
     let mut old_termios: libc::termios = mem::zeroed();
     libc::tcgetattr(libc::STDOUT_FILENO, &mut old_termios);
