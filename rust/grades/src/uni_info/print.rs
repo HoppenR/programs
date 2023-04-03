@@ -23,10 +23,10 @@
 //!
 //! For invalid data it will simply tell the formatter to stop and return an uncategorized error.
 
-use super::cursor::Cursor;
-use super::{Course, CursorLevel, Grade, Moment, UniInfo};
-use crate::ui::term::{BLD, BLU, CUR, CYN, GRN, RED, RST, STK, UDL, YLW};
+use crate::ui::term::attributes::*;
 use crate::ui::term::{ERASE_TO_DISP_END, ERASE_TO_LINE_END};
+use crate::uni_info::cursor::Cursor;
+use crate::uni_info::{Course, CursorLevel, Grade, Moment, UniInfo};
 use std::fmt::{self, Display, Formatter};
 
 /// Helper struct to implement Display for a tuple when iterating over `Tasks`.
@@ -43,7 +43,7 @@ fn indent(indent_level: usize) -> String {
 
 /// Writes and formats a `uni_info` object using their `Display` implementations.
 /// The leading indentation is given in the `start` parameter.
-fn write_entry<T>(f: &mut Formatter<'_>, entry: T, targeted: bool, start: String) -> fmt::Result
+fn write_entry<T>(f: &mut Formatter<'_>, entry: &T, targeted: bool, start: String) -> fmt::Result
 where
     T: Display,
 {
@@ -157,7 +157,7 @@ impl Display for UniInfo {
                                     level: CursorLevel::Task,
                                     ..cursor
                                 };
-                                write_entry(f, task, self.cursor == cursor, indent(4))?;
+                                write_entry(f, &task, self.cursor == cursor, indent(4))?;
                             }
                         }
                     }

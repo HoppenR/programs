@@ -1,78 +1,183 @@
 //! Functions and escape sequences for interacting with a terminal
 //!
-//! This module contains some basic predefined strings indended to communicate
-//! with most, if not all terminals.
-//! The `set_raw` and `set_noraw` functions use the `libc` predefined functions
-//! `tcgetattr`, `cfmakeraw`, and `tcsetattr` to set the terminal into a raw
+//! The Term struct is indended to abstract all terminal output for the duration
+//! of its lifetime. It provides bindings for setting the terminal into a raw
 //! mode that implies a more explicit cursor movement, and offers more immediate
-//! data for key events.
+//! data for key events. As well as offering automatic reset of the raw mode
+//! when the object goes out of scope.
+//!
+//! The module (and its child module `attributes` also contain some attribute
+//! strings, as well as constants to mark what the terminal should clear. These are
+//! meant to be used to format strings with before passing them on to `term.write`.
 //!
 //! # Usage
 //!
 //! An example of the usage is:
 //!
 //! ```
-//! let old_ios = unsafe { set_raw() };
-//! print!("{BUF_ALT}");
-//! println!("{RED}Red text in alt terminal buffer{RST}");
-//! print!("{BUF_PRI}");
-//! unsafe { set_noraw(&old_ios) };
-//! println!("Back in normal buffer!");
+//! {
+//!     let mut term = Term::new();
+//!     term.set_raw();
+//!     term.switch_alternate_buffer()?;
+//!     term.write(&format!("immediate key events now!{ERASE_TO_LINE_END}"))?;
+//!     term.switch_primary_buffer()?;
+//!     term.write(&"Back in normal buffer!{ERASE_TO_DISP_END}")?;
+//! }
+//! println!("Terminal mode restored after drop. Input is back to what it was prior!");
 //! ```
 
+use std::fmt::Display;
+use std::io::{self, Error, StdoutLock, Write};
 use std::mem;
 
-/// Reset the color and attributes.
-pub(crate) const RST: &str = "\x1b[0m";
-/// Set attribute `bold`.
-pub(crate) const BLD: &str = "\x1b[1m";
-/// Set attribute `cursive`.
-pub(crate) const CUR: &str = "\x1b[3m";
-/// Set attribute `underline`.
-pub(crate) const UDL: &str = "\x1b[4m";
-/// Set attribute `strikethrough`.
-pub(crate) const STK: &str = "\x1b[9m";
-/// Set color `red`.
-pub(crate) const RED: &str = "\x1b[91m";
-/// Set color `green`.
-pub(crate) const GRN: &str = "\x1b[92m";
-/// Set color `yellow`.
-pub(crate) const YLW: &str = "\x1b[93m";
-/// Set color `blue`.
-pub(crate) const BLU: &str = "\x1b[94m";
-/// Set color `cyan`.
-pub(crate) const CYN: &str = "\x1b[96m";
+/// Terminal codes to change the attributes of text.
+/// This is a convenience module, intended to be imported as `term::attributes::*;`
+/// so that you can directly include attribute constants in formatting strings.
+///
+/// # Usage
+///
+/// An example usage of this is:
+///
+/// ```
+/// use term::attributes::*;
+/// println!("{RED}{BLD}Red bold text here!{RST} Normal text now");
+/// ```
+pub(crate) mod attributes {
+    /// Reset the color and attributes.
+    pub(crate) const RST: &str = "\x1b[0m";
+    /// Set attribute `bold`.
+    pub(crate) const BLD: &str = "\x1b[1m";
+    /// Set attribute `cursive`.
+    pub(crate) const CUR: &str = "\x1b[3m";
+    /// Set attribute `underline`.
+    pub(crate) const UDL: &str = "\x1b[4m";
+    /// Set attribute `strikethrough`.
+    pub(crate) const STK: &str = "\x1b[9m";
+    /// Set color `red`.
+    pub(crate) const RED: &str = "\x1b[91m";
+    /// Set color `green`.
+    pub(crate) const GRN: &str = "\x1b[92m";
+    /// Set color `yellow`.
+    pub(crate) const YLW: &str = "\x1b[93m";
+    /// Set color `blue`.
+    pub(crate) const BLU: &str = "\x1b[94m";
+    /// Set color `cyan`.
+    pub(crate) const CYN: &str = "\x1b[96m";
+}
+
 /// Clear the terminal contents from the terminal cursor to the end of the line.
 pub(crate) const ERASE_TO_LINE_END: &str = "\x1b[0K";
 /// Clear the terminal contents from the terminal cursor to the end of the display.
 pub(crate) const ERASE_TO_DISP_END: &str = "\x1b[J";
 /// Switch to the alternate terminal buffer.
-pub(super) const BUF_ALT: &str = "\x1b[?1049h";
+const BUFFER_ALTERNATE: &str = "\x1b[?1049h";
 /// Clear the current buffer.
-pub(super) const BUF_CLR: &str = "\x1b2J";
+const BUFFER_CLEAR: &str = "\x1b2J";
 /// Switch to the primary terminal buffer.
-pub(super) const BUF_PRI: &str = "\x1b[?1049l";
+const BUFFER_PRIMARY: &str = "\x1b[?1049l";
 /// Move the cursor to upper left corner `(0, 0)`.
-pub(super) const CURS_HOME: &str = "\x1b[H";
+const CURSOR_HOME: &str = "\x1b[H";
 /// Hide the terminal cursor.
-pub(super) const CURS_INVIS: &str = "\x1b[?25l";
+const CURSOR_INVIS: &str = "\x1b[?25l";
 /// Show the terminal cursor.
-pub(super) const CURS_VIS: &str = "\x1b[?25h";
+const CURSOR_VISIBLE: &str = "\x1b[?25h";
 /// Move the cursor one step to the left.
-pub(super) const CURS_LEFT: &str = "\x1b[D";
+const CURSOR_LEFT: &str = "\x1b[D";
 
-/// Resets the terminal to the terminal I/O interfaces settings in `termios`.
-pub(super) unsafe fn set_noraw(old_termios: &libc::termios) {
-    libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, old_termios);
+pub(super) struct Term<'a> {
+    old_termios: libc::termios,
+    os: StdoutLock<'a>,
+    is_raw: bool,
 }
 
-/// Sets the terminal into raw-mode. Returns the terminal I/O interfaces settings
-/// that can be used to restore the terminal after it is finished being used raw.
-pub(super) unsafe fn set_raw() -> libc::termios {
-    let mut old_termios: libc::termios = mem::zeroed();
-    libc::tcgetattr(libc::STDOUT_FILENO, &mut old_termios);
-    let mut raw_termios: libc::termios = old_termios;
-    libc::cfmakeraw(&mut raw_termios);
-    libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, &raw_termios);
-    old_termios
+impl<'a> Drop for Term<'a> {
+    fn drop(&mut self) {
+        self.set_old_termios();
+    }
+}
+
+impl<'a> Term<'a> {
+    /// Creates a `Term` object that simplifies interacting with a terminal
+    /// that may be put into raw mode.
+    pub(super) fn new() -> Self {
+        Term {
+            old_termios: unsafe { mem::zeroed() },
+            is_raw: false,
+            os: io::stdout().lock(),
+        }
+    }
+
+    /// Sets the terminal into raw-mode. Saves the terminal I/O interfaces settings
+    /// that can be used to restore the terminal after it is finished being used raw.
+    pub(super) fn set_raw(&mut self) {
+        if self.is_raw {
+            return;
+        }
+        unsafe {
+            libc::tcgetattr(libc::STDOUT_FILENO, &mut self.old_termios);
+            let mut raw_termios: libc::termios = self.old_termios;
+            libc::cfmakeraw(&mut raw_termios);
+            libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, &raw_termios);
+        }
+        self.is_raw = true;
+    }
+
+    pub(super) fn write<T>(&mut self, contents: &T) -> Result<(), Error>
+    where
+        T: Display,
+    {
+        write!(self.os, "{}", contents)
+    }
+
+    pub(super) fn switch_alternate_buffer(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", BUFFER_ALTERNATE)
+    }
+
+    pub(super) fn switch_primary_buffer(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", BUFFER_PRIMARY)
+    }
+
+    pub(super) fn clear_buffer(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", BUFFER_CLEAR)
+    }
+
+    pub(super) fn reset_cursor_pos(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", CURSOR_HOME)
+    }
+
+    pub(super) fn hide_cursor(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", CURSOR_INVIS)
+    }
+
+    pub(super) fn show_cursor(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", CURSOR_VISIBLE)
+    }
+
+    pub(super) fn move_cursor_left(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", CURSOR_LEFT)
+    }
+
+    pub(super) fn move_cursor_line_begin(&mut self) -> Result<(), Error> {
+        write!(self.os, "\r")
+    }
+
+    pub(super) fn erase_to_line_end(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", ERASE_TO_LINE_END)
+    }
+
+    pub(super) fn flush(&mut self) -> Result<(), Error> {
+        self.os.flush()
+    }
+
+    /// Resets the terminal to the terminal I/O interfaces settings in `termios`
+    /// if it is currently in raw mode.
+    fn set_old_termios(&mut self) {
+        if !self.is_raw {
+            return;
+        }
+        unsafe {
+            libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, &self.old_termios);
+        }
+        self.is_raw = false;
+    }
 }
