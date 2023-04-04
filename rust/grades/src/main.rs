@@ -1,8 +1,7 @@
 //! A program to navigate, edit, and keep track of university grades
 //!
 //! This terminal program aims to provide easy, safe, and intuitive
-//! manipulation, and record keeping of university grades.
-//!
+//! manipulation, and record keeping of university grades, sub-grades and tasks.
 
 mod ui;
 mod uni_info;
@@ -19,9 +18,7 @@ macro_rules! err_usage {
     };
 }
 
-// TODO[ ]: Only format/print the area of uni_info around the cursor.
-//          Maybe use some sort of variable to track offset?
-//          Some sort of view port?
+// TODO[ ]: Prompt yes/no on saving when quiting
 
 /// Run the editing program, reading the file at command line arg 1.
 /// Saves the JSON data back to disk if no errors occur.

@@ -49,6 +49,12 @@ macro_rules! keycode {
     ("up") => {
         [ESC, b'[', b'A']
     };
+    ("ctrl-e") => {
+        [5]
+    };
+    ("ctrl-y") => {
+        [25]
+    };
 }
 
 /// `Key` represents data from a keypress.
@@ -138,5 +144,13 @@ impl<'a> Key<'a> {
     /// Checks whether the last keypress is the left-arrow.
     pub(super) fn is_left(&self) -> bool {
         matches!(self.data[..self.rd], keycode!("left"))
+    }
+
+    pub(super) fn is_ctrl_e(&self) -> bool {
+        matches!(self.data[..self.rd], keycode!("ctrl-e"))
+    }
+
+    pub(super) fn is_ctrl_y(&self) -> bool {
+        matches!(self.data[..self.rd], keycode!("ctrl-y"))
     }
 }
