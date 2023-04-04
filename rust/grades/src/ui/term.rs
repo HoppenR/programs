@@ -83,16 +83,33 @@ const CURSOR_INVIS: &str = "\x1b[?25l";
 const CURSOR_VISIBLE: &str = "\x1b[?25h";
 /// Move the cursor one step to the left.
 const CURSOR_LEFT: &str = "\x1b[D";
+/// Disable line wrap
+const LINEWRAP_DISABLE: &str = "\x1b[?7l";
+/// Enable line wrap
+const LINEWRAP_ENABLE: &str = "\x1b[?7h";
 
 pub(super) struct Term<'a> {
     old_termios: libc::termios,
     os: StdoutLock<'a>,
     is_raw: bool,
+    size: TermSize,
+}
+
+struct TermSize {
+    row: libc::c_ushort,
+    #[allow(dead_code)]
+    col: libc::c_ushort,
+    #[allow(dead_code)]
+    x_pixsz: libc::c_ushort,
+    #[allow(dead_code)]
+    y_pxsz: libc::c_ushort,
 }
 
 impl<'a> Drop for Term<'a> {
     fn drop(&mut self) {
-        self.set_old_termios();
+        if self.set_old_termios().is_err() {
+            panic!("Error restoring terminal in Term::drop");
+        }
     }
 }
 
@@ -104,22 +121,52 @@ impl<'a> Term<'a> {
             old_termios: unsafe { mem::zeroed() },
             is_raw: false,
             os: io::stdout().lock(),
+            size: unsafe { mem::zeroed() },
         }
     }
 
     /// Sets the terminal into raw-mode. Saves the terminal I/O interfaces settings
     /// that can be used to restore the terminal after it is finished being used raw.
-    pub(super) fn set_raw(&mut self) {
+    pub(super) fn set_raw(&mut self) -> Result<(), Error> {
         if self.is_raw {
-            return;
+            return Ok(());
         }
         unsafe {
-            libc::tcgetattr(libc::STDOUT_FILENO, &mut self.old_termios);
+            e(libc::tcgetattr(libc::STDOUT_FILENO, &mut self.old_termios))?;
             let mut raw_termios: libc::termios = self.old_termios;
             libc::cfmakeraw(&mut raw_termios);
-            libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, &raw_termios);
+            e(libc::tcsetattr(
+                libc::STDOUT_FILENO,
+                libc::TCSANOW,
+                &raw_termios,
+            ))?;
         }
         self.is_raw = true;
+        Ok(())
+    }
+
+    pub(super) fn write_offset<T>(&mut self, contents: &T, offset: usize) -> Result<(), Error>
+    where
+        T: Display,
+    {
+        self.update_size()?;
+        let output: String = format!("{}", contents)
+            .lines()
+            .skip(offset)
+            .take(self.size.row.into())
+            .collect::<Vec<&str>>()
+            .join("\n");
+        self.write(&output)
+    }
+
+    fn update_size(&mut self) -> Result<(), Error> {
+        unsafe {
+            e(libc::ioctl(
+                libc::STDOUT_FILENO,
+                libc::TIOCGWINSZ,
+                &mut self.size,
+            ))
+        }
     }
 
     pub(super) fn write<T>(&mut self, contents: &T) -> Result<(), Error>
@@ -165,19 +212,43 @@ impl<'a> Term<'a> {
         write!(self.os, "{}", ERASE_TO_LINE_END)
     }
 
+    pub(super) fn disable_line_wrap(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", LINEWRAP_DISABLE)
+    }
+
+    pub(super) fn enable_line_wrap(&mut self) -> Result<(), Error> {
+        write!(self.os, "{}", LINEWRAP_ENABLE)
+    }
+
     pub(super) fn flush(&mut self) -> Result<(), Error> {
         self.os.flush()
     }
 
     /// Resets the terminal to the terminal I/O interfaces settings in `termios`
     /// if it is currently in raw mode.
-    fn set_old_termios(&mut self) {
+    fn set_old_termios(&mut self) -> Result<(), Error> {
         if !self.is_raw {
-            return;
+            return Ok(());
         }
         unsafe {
-            libc::tcsetattr(libc::STDOUT_FILENO, libc::TCSANOW, &self.old_termios);
+            e(libc::tcsetattr(
+                libc::STDOUT_FILENO,
+                libc::TCSANOW,
+                &self.old_termios,
+            ))?;
         }
         self.is_raw = false;
+        Ok(())
+    }
+}
+
+/// Checks whether a return value from a libc syscall is -1,
+/// indicating an os error.
+/// Returns last os error on value = -1.
+fn e(value: libc::c_int) -> Result<(), Error> {
+    if value == -1 {
+        Err(std::io::Error::last_os_error())
+    } else {
+        Ok(())
     }
 }

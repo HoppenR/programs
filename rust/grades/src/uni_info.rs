@@ -160,28 +160,28 @@ impl UniInfo {
 
     /// Delete the currently targeted entry.
     pub(super) fn delete_entry(&mut self) {
-        let should_exit: bool = match self.cursor.level {
+        let (entries, cursorpos) = match self.cursor.level {
             CursorLevel::Semester => {
                 let ix: usize = self.cursor.semester_ix;
                 if let Some(menu) = self.sel_menu_mut() {
                     menu.remove(ix);
                 }
-                self.sel_menu_entries() == 0
+                (self.sel_menu_entries(), ix)
             }
-            CursorLevel::Period => false,
+            CursorLevel::Period => (0, self.cursor.period_ix),
             CursorLevel::Course => {
                 let ix: usize = self.cursor.course_ix;
                 if let Some(period) = self.sel_period_mut() {
                     period.remove(ix);
                 }
-                self.sel_period_entries() == 0
+                (self.sel_period_entries(), ix)
             }
             CursorLevel::Moment => {
                 let ix: usize = self.cursor.moment_ix;
                 if let Some(course) = self.sel_course_mut() {
                     course.moments.remove(ix);
                 }
-                self.sel_course_entries() == 0
+                (self.sel_course_entries(), ix)
             }
             CursorLevel::Task => {
                 if let Some(key) = self.sel_task().map(|x| x.0.clone()) {
@@ -194,13 +194,13 @@ impl UniInfo {
                         }
                     }
                 }
-                self.sel_moment_entries() == 0
+                (self.sel_moment_entries(), self.cursor.task_ix)
             }
         };
-        if should_exit {
+        if entries == 0 {
             self.cursor_exit();
-        } else {
-            self.cursor.up();
+        } else if cursorpos == entries {
+            self.cursor_up();
         }
     }
 

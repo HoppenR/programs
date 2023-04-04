@@ -34,6 +34,7 @@ pub(super) struct UI<'a> {
     key: Key<'a>,
     term: Term<'a>,
     uni: &'a mut UniInfo,
+    offset: usize,
 }
 
 impl<'a> Drop for UI<'a> {
@@ -47,19 +48,25 @@ impl<'a> Drop for UI<'a> {
 impl<'a> UI<'a> {
     /// Sets up the terminal for the user interface, and creates a `UI` instance.
     pub(super) fn new(uni: &'a mut UniInfo) -> Result<Self, Error> {
-        let key = Key::new();
         let mut term = Term::new();
-        term.set_raw();
+        term.set_raw()?;
         term.switch_alternate_buffer()?;
         term.clear_buffer()?;
         term.reset_cursor_pos()?;
         term.hide_cursor()?;
+        term.disable_line_wrap()?;
         term.flush()?;
-        Ok(UI { key, term, uni })
+        Ok(UI {
+            key: Key::new(),
+            term,
+            uni,
+            offset: 0,
+        })
     }
 
     /// Resets the terminal to the state prior to the `UI` instance creation.
     fn finish(&mut self) -> Result<(), Error> {
+        self.term.enable_line_wrap()?;
         self.term.show_cursor()?;
         self.term.clear_buffer()?;
         self.term.reset_cursor_pos()?;
@@ -67,11 +74,11 @@ impl<'a> UI<'a> {
         self.term.flush()
     }
 
-    /// Takes ownership of the `UI` instance, effectively dropping it.
+    /// Main loop. Takes ownership of the `UI` instance, effectively dropping it.
     pub(super) fn main_loop(mut self) -> Result<(), Error> {
         loop {
             self.term.reset_cursor_pos()?;
-            self.term.write(self.uni)?;
+            self.term.write_offset(self.uni, self.offset)?;
             self.show_keybinds()?;
             self.term.flush()?;
             self.key.read()?;
@@ -81,7 +88,7 @@ impl<'a> UI<'a> {
                     self.uni.cursor_down();
                 }
                 Some('a') => self.add_entry()?,
-                Some('d') => self.uni.delete_entry(),
+                Some('d') => self.delete_entry()?,
                 Some('e') => self.edit_entry()?,
                 Some('h') => self.uni.cursor_exit(),
                 Some('j') => self.uni.cursor_down(),
@@ -93,6 +100,8 @@ impl<'a> UI<'a> {
                 None if self.key.is_down() => self.uni.cursor_down(),
                 None if self.key.is_up() => self.uni.cursor_up(),
                 None if self.key.is_right() => self.uni.cursor_enter(),
+                None if self.key.is_ctrl_e() => self.offset = self.offset.saturating_sub(1),
+                None if self.key.is_ctrl_y() => self.offset += 1,
                 None if self.key.is_esc() => break,
                 _ => {}
             }
@@ -137,6 +146,24 @@ impl<'a> UI<'a> {
                 self.uni.add_task(name);
             }
             CursorLevel::Task => {}
+        }
+        Ok(())
+    }
+
+    /// Prompt the user for deletion of the targeted entry.
+    /// Waits for a valid y/n input.
+    fn delete_entry(&mut self) -> Result<(), Error> {
+        self.prompt_line("Delete entry? [y]es [n]o")?;
+        self.key.read()?;
+        loop {
+            match self.key.as_printable_ascii() {
+                Some('y') | Some('Y') => {
+                    self.uni.delete_entry();
+                    break;
+                }
+                Some('n') | Some('N') => break,
+                _ => {}
+            }
         }
         Ok(())
     }
