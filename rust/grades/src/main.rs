@@ -18,8 +18,6 @@ macro_rules! err_usage {
     };
 }
 
-// TODO[ ]: Prompt yes/no on saving when quiting
-
 /// Run the editing program, reading the file at command line arg 1.
 /// Saves the JSON data back to disk if no errors occur.
 fn main() -> io::Result<()> {
@@ -33,11 +31,13 @@ fn main() -> io::Result<()> {
 
     // --- UI ---
     let ui = UI::new(&mut uni)?;
-    ui.main_loop()?;
+    let should_save: bool = ui.main_loop()?;
 
     // -- SAVE --
-    let json_data: String = serde_json::to_string_pretty(&uni)?;
-    fs::write(file_path, json_data)?;
+    if should_save {
+        let json_data: String = serde_json::to_string_pretty(&uni)?;
+        fs::write(file_path, json_data)?;
+    }
 
     Ok(())
 }
