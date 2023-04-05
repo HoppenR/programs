@@ -35,6 +35,7 @@ use cursor::{Cursor, CursorLevel};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+/// The top level object, containing uni data and a cursor to manipulate that data.
 #[derive(Deserialize, Serialize)]
 pub(super) struct UniInfo {
     #[serde(default)]
@@ -102,7 +103,7 @@ impl UniInfo {
         let num_entries_next_level: usize = match self.cursor.level {
             CursorLevel::Semester => self.sel_semester_entries(),
             CursorLevel::Period => self.sel_period_entries(),
-            CursorLevel::Course => match self.sel_course().map(|x| x.should_print_moments()) {
+            CursorLevel::Course => match self.sel_course().map(Course::should_print_moments) {
                 Some(true) => self.sel_course_entries(),
                 _ => 0,
             },
@@ -120,9 +121,7 @@ impl UniInfo {
     }
 
     pub(super) fn add_semester(&mut self) {
-        if let Some(menu) = self.sel_menu_mut() {
-            menu.push([Vec::new(), Vec::new()])
-        }
+        self.sel_menu_mut().push([Vec::new(), Vec::new()]);
     }
 
     pub(super) fn add_course(&mut self, code: String, grade: Grade, name: String) {
@@ -132,7 +131,7 @@ impl UniInfo {
                 grade,
                 moments: Vec::new(),
                 name,
-            })
+            });
         }
     }
 
@@ -144,7 +143,7 @@ impl UniInfo {
                 credits,
                 description,
                 tasks: None,
-            })
+            });
         }
     }
 
@@ -163,9 +162,7 @@ impl UniInfo {
         let (entries, cursorpos) = match self.cursor.level {
             CursorLevel::Semester => {
                 let ix: usize = self.cursor.semester_ix;
-                if let Some(menu) = self.sel_menu_mut() {
-                    menu.remove(ix);
-                }
+                self.sel_menu_mut().remove(ix);
                 (self.sel_menu_entries(), ix)
             }
             CursorLevel::Period => (0, self.cursor.period_ix),
@@ -226,18 +223,15 @@ impl UniInfo {
     }
 
     fn sel_menu_entries(&self) -> usize {
-        match self.sel_menu() {
-            Some(menu) => menu.len(),
-            _ => 0,
-        }
+        self.sel_menu().len()
     }
 
-    fn sel_menu_mut(&mut self) -> Option<&mut Menu> {
-        Some(&mut self.menu)
+    fn sel_menu_mut(&mut self) -> &mut Menu {
+        &mut self.menu
     }
 
-    fn sel_menu(&self) -> Option<&Menu> {
-        Some(&self.menu)
+    fn sel_menu(&self) -> &Menu {
+        &self.menu
     }
 
     fn sel_semester_entries(&self) -> usize {
@@ -249,12 +243,12 @@ impl UniInfo {
 
     fn sel_semester_mut(&mut self) -> Option<&mut Semester> {
         let ix: usize = self.cursor.semester_ix;
-        self.sel_menu_mut()?.get_mut(ix)
+        self.sel_menu_mut().get_mut(ix)
     }
 
     fn sel_semester(&self) -> Option<&Semester> {
         let ix: usize = self.cursor.semester_ix;
-        self.sel_menu()?.get(ix)
+        self.sel_menu().get(ix)
     }
 
     fn sel_period_entries(&self) -> usize {

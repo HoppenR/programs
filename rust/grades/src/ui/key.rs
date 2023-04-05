@@ -18,7 +18,7 @@
 //! }
 //! ```
 
-use std::io::{self, Error, Read, StdinLock};
+use std::io::{self, Read, StdinLock};
 use std::str;
 
 const ESC: u8 = 27;
@@ -29,7 +29,7 @@ const ESC: u8 = 27;
 /// respectively when pressing backspace.
 macro_rules! keycode {
     ("backspace") => {
-        [8] | [127]
+        [8 | 127]
     };
     ("down") => {
         [ESC, b'[', b'B']
@@ -57,14 +57,14 @@ macro_rules! keycode {
     };
 }
 
-/// `Key` represents data from a keypress.
+/// `Key` represents keywise input for a program.
 pub(super) struct Key<'a> {
     data: [u8; 6],
     is: StdinLock<'a>,
     rd: usize,
 }
 
-impl<'a> Key<'a> {
+impl Key<'_> {
     pub(super) fn new() -> Self {
         Key {
             data: [0; 6],
@@ -74,10 +74,10 @@ impl<'a> Key<'a> {
     }
 
     /// Blocking read a keypress from standard input.
-    pub(super) fn read(&mut self) -> Result<(), Error> {
+    pub(super) fn read(&mut self) -> io::Result<()> {
         self.rd = self.is.read(&mut self.data[..])?;
         if self.rd == 0 {
-            return Err(Error::new(
+            return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid input, 0 bytes read",
             ));
@@ -99,8 +99,7 @@ impl<'a> Key<'a> {
     pub(super) fn as_printable_utf8(&self) -> Option<char> {
         match str::from_utf8(&self.data[..self.rd]) {
             Ok(data_str) => match data_str.chars().next() {
-                Some('\u{00}'..='\u{1f}') => None,
-                Some('\u{7f}'..='\u{9f}') => None,
+                Some('\u{00}'..='\u{1f}' | '\u{7f}'..='\u{9f}') => None,
                 opt_ch => opt_ch,
             },
             Err(_) => None,
@@ -122,6 +121,7 @@ impl<'a> Key<'a> {
         matches!(self.data[..self.rd], keycode!("enter"))
     }
 
+    /// Checks whether the last keypress is the escape key.
     pub(super) fn is_esc(&self) -> bool {
         matches!(self.data[..self.rd], keycode!("esc"))
     }
@@ -146,10 +146,12 @@ impl<'a> Key<'a> {
         matches!(self.data[..self.rd], keycode!("left"))
     }
 
+    /// Checks whether the last keypress is CTRL-e.
     pub(super) fn is_ctrl_e(&self) -> bool {
         matches!(self.data[..self.rd], keycode!("ctrl-e"))
     }
 
+    /// Checks whether the last keypress is CTRL-y.
     pub(super) fn is_ctrl_y(&self) -> bool {
         matches!(self.data[..self.rd], keycode!("ctrl-y"))
     }
