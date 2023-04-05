@@ -46,14 +46,14 @@ pub(super) struct UniInfo {
 type Menu = Vec<Semester>;
 type Semester = [Period; 2];
 type Period = Vec<Course>;
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize)]
 struct Course {
     code: String,
     grade: Grade,
     moments: Moments,
     name: String,
 }
-#[derive(Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Deserialize, Serialize)]
 #[serde(untagged)]
 pub(super) enum Grade {
     Completed(bool),
@@ -61,7 +61,7 @@ pub(super) enum Grade {
     Ongoing,
 }
 type Moments = Vec<Moment>;
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize)]
 struct Moment {
     code: String,
     completed: bool,
@@ -75,8 +75,8 @@ type Tasks = BTreeMap<String, bool>;
 /// A struct that represents university info, as well as data and bindings to
 /// navigate a menu of its data members.
 impl UniInfo {
-    pub(super) fn cursor_level(&self) -> CursorLevel {
-        self.cursor.level
+    pub(super) fn cursor_level(&self) -> &CursorLevel {
+        &self.cursor.level
     }
 
     /// Moves the cursor down, increasing the index up to the amount of

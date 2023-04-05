@@ -18,6 +18,8 @@ macro_rules! err_usage {
     };
 }
 
+// TODO[ ]: Use format specifiers for indentation instead of `indent`
+
 /// Run the editing program, reading the file at command line arg 1.
 /// Saves the JSON data back to disk if no errors occur.
 fn main() -> io::Result<()> {

@@ -30,7 +30,7 @@
 
 use std::cmp;
 
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Default, PartialEq)]
 pub(crate) enum CursorLevel {
     #[default]
     Semester,
@@ -40,7 +40,7 @@ pub(crate) enum CursorLevel {
     Task,
 }
 
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Default, PartialEq)]
 pub(super) struct Cursor {
     pub(super) semester_ix: usize,
     pub(super) period_ix: usize,

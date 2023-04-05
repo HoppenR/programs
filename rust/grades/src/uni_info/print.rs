@@ -29,29 +29,26 @@ use crate::uni_info::cursor::Cursor;
 use crate::uni_info::{Course, CursorLevel, Grade, Moment, UniInfo};
 use std::fmt::{self, Display, Formatter};
 
-/// Helper struct to implement Display for a tuple when iterating over `Tasks`.
+/// Helper struct to implement `Display` for a tuple when iterating over `Tasks`.
 struct PrintableTask {
     name: String,
     completed: bool,
 }
 
-const INDENT: &str = "    ";
-
-fn indent(indent_level: usize) -> String {
-    INDENT.repeat(indent_level)
-}
+const INDENT_WIDTH: usize = 4;
 
 /// Writes and formats a `uni_info` object using their `Display` implementations.
 /// The leading indentation is given in the `start` parameter.
-fn write_entry<T>(f: &mut Formatter, entry: &T, targeted: bool, start: &str) -> fmt::Result
+fn write_entry<T>(f: &mut Formatter, entry: &T, targeted: bool, indent_amount: usize) -> fmt::Result
 where
     T: Display,
 {
     write!(
         f,
-        "{indicator}{start}{entry}{end}\n\r",
+        "{indicator}{lead:width$}{entry}{ERASE_TO_LINE_END}\n\r",
         indicator = if targeted { "→" } else { "" },
-        end = ERASE_TO_LINE_END,
+        lead = "",
+        width = indent_amount * INDENT_WIDTH,
     )
 }
 
@@ -62,20 +59,21 @@ fn write_header(
     title: &str,
     index: usize,
     targeted: bool,
-    start: &str,
+    indent_amount: usize,
 ) -> fmt::Result {
     write!(
         f,
-        "{indicator}{start}• {title} {index}:{end}\n\r",
+        "{indicator}{lead:width$}• {title} {index}:{ERASE_TO_LINE_END}\n\r",
         indicator = if targeted { "→" } else { "" },
-        end = ERASE_TO_LINE_END,
+        lead = "",
+        width = indent_amount * INDENT_WIDTH,
     )
 }
 
 /// Writes and formats the average grade of the `courses` parameter,
 /// as well as its current and total credits.
 /// The leading indentation is given in the `start` parameter.
-fn write_progress(f: &mut Formatter, courses: &Vec<Course>, start: &str) -> fmt::Result {
+fn write_progress(f: &mut Formatter, courses: &Vec<&Course>, indent_amount: usize) -> fmt::Result {
     let mut accrued_creds: f32 = 0.0;
     let mut total_creds: f32 = 0.0;
     let mut grades: Vec<usize> = Vec::new();
@@ -96,19 +94,20 @@ fn write_progress(f: &mut Formatter, courses: &Vec<Course>, start: &str) -> fmt:
     let average: f32 = grades.iter().sum::<usize>() as f32 / grades.len() as f32;
     write!(
         f,
-        "{start}{avg_color}{average:.3}{RST}avg ‖ \
-        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{end}\n\r",
-        cred_color = if accrued_creds == 0.0 { RED } else { CYN },
+        "{lead:width$}{avg_color}{average:.3}{RST}avg ‖ \
+        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{ERASE_TO_LINE_END}\n\r",
+        lead = "",
+        width = indent_amount * INDENT_WIDTH,
         avg_color = if f32::is_nan(average) { RED } else { CYN },
-        end = ERASE_TO_LINE_END,
+        cred_color = if accrued_creds == 0.0 { RED } else { CYN },
     )
 }
 
 impl Display for UniInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let mut all_courses: Vec<Course> = Vec::new();
-        let mut semester_courses: Vec<Course> = Vec::new();
-        let mut period_courses: Vec<Course> = Vec::new();
+        let mut all_courses: Vec<&Course> = Vec::new();
+        let mut semester_courses: Vec<&Course> = Vec::new();
+        let mut period_courses: Vec<&Course> = Vec::new();
         write!(
             f,
             "{BLD}{RED}Averages only include courses graded 3-5{RST}{ERASE_TO_DISP_END}\n\r",
@@ -119,28 +118,22 @@ impl Display for UniInfo {
                 level: CursorLevel::Semester,
                 ..Default::default()
             };
-            write_header(f, "Semester", sem_ix + 1, self.cursor == cursor, &indent(0))?;
+            write_header(f, "Semester", sem_ix + 1, self.cursor == cursor, 0)?;
             for (period_ix, period) in sem.iter().enumerate() {
                 let cursor = Cursor {
                     period_ix,
                     level: CursorLevel::Period,
                     ..cursor
                 };
-                write_header(
-                    f,
-                    "Period",
-                    period_ix + 1,
-                    self.cursor == cursor,
-                    &indent(1),
-                )?;
+                write_header(f, "Period", period_ix + 1, self.cursor == cursor, 1)?;
                 for (course_ix, course) in period.iter().enumerate() {
-                    period_courses.push(course.clone());
+                    period_courses.push(course);
                     let cursor = Cursor {
                         course_ix,
                         level: CursorLevel::Course,
                         ..cursor
                     };
-                    write_entry(f, course, self.cursor == cursor, &indent(2))?;
+                    write_entry(f, course, self.cursor == cursor, 2)?;
                     if !course.should_print_moments() {
                         continue;
                     }
@@ -150,7 +143,7 @@ impl Display for UniInfo {
                             level: CursorLevel::Moment,
                             ..cursor
                         };
-                        write_entry(f, moment, self.cursor == cursor, &indent(3))?;
+                        write_entry(f, moment, self.cursor == cursor, 3)?;
                         if let Some(tasks) = &moment.tasks {
                             for (task_ix, task) in tasks.iter().map(PrintableTask::from).enumerate()
                             {
@@ -159,18 +152,18 @@ impl Display for UniInfo {
                                     level: CursorLevel::Task,
                                     ..cursor
                                 };
-                                write_entry(f, &task, self.cursor == cursor, &indent(4))?;
+                                write_entry(f, &task, self.cursor == cursor, 4)?;
                             }
                         }
                     }
                 }
-                write_progress(f, &period_courses, &indent(2))?;
+                write_progress(f, &period_courses, 2)?;
                 semester_courses.append(&mut period_courses);
             }
-            write_progress(f, &semester_courses, &indent(1))?;
+            write_progress(f, &semester_courses, 1)?;
             all_courses.append(&mut semester_courses);
         }
-        write_progress(f, &all_courses, &indent(0))?;
+        write_progress(f, &all_courses, 0)?;
         write!(f, "{ERASE_TO_DISP_END}")
     }
 }
