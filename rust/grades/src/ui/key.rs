@@ -87,7 +87,7 @@ impl Key<'_> {
 
     /// Returns an optional character if the last keypress is representable
     /// as a printable ascii-character.
-    pub(super) fn as_printable_ascii(&self) -> Option<char> {
+    pub(super) const fn as_printable_ascii(&self) -> Option<char> {
         if self.rd == 1 && matches!(self.data[0], b' '..=b'~') {
             return Some(self.data[0] as char);
         }
@@ -96,63 +96,63 @@ impl Key<'_> {
 
     /// Returns an optional character if the last keypress is representable
     /// as a printable utf8-character.
+    ///
     pub(super) fn as_printable_utf8(&self) -> Option<char> {
-        match str::from_utf8(&self.data[..self.rd]) {
-            Ok(data_str) => match data_str.chars().next() {
+        str::from_utf8(self.data.get(..self.rd).unwrap_or(&[])).map_or(None, |data_str| {
+            match data_str.chars().next() {
                 Some('\u{00}'..='\u{1f}' | '\u{7f}'..='\u{9f}') => None,
                 opt_ch => opt_ch,
-            },
-            Err(_) => None,
-        }
+            }
+        })
     }
 
     /// Reinterprets the first byte of the keypress as a char.
-    pub(super) fn as_char_unchecked(&self) -> char {
+    pub(super) const fn as_char_unchecked(&self) -> char {
         self.data[0] as char
     }
 
     /// Checks whether the last keypress is the backspace or delete character.
     pub(super) fn is_backspace(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("backspace"))
+        matches!(self.data.get(..self.rd), Some(keycode!("backspace")))
     }
 
     /// Checks whether the last keypress is the enter (return) key.
     pub(super) fn is_enter(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("enter"))
+        matches!(self.data.get(..self.rd), Some(keycode!("enter")))
     }
 
     /// Checks whether the last keypress is the escape key.
     pub(super) fn is_esc(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("esc"))
+        matches!(self.data.get(..self.rd), Some(keycode!("esc")))
     }
 
     /// Checks whether the last keypress is the up-arrow.
     pub(super) fn is_up(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("up"))
+        matches!(self.data.get(..self.rd), Some(keycode!("up")))
     }
 
     /// Checks whether the last keypress is the down-arrow.
     pub(super) fn is_down(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("down"))
+        matches!(self.data.get(..self.rd), Some(keycode!("down")))
     }
 
     /// Checks whether the last keypress is the right-arrow.
     pub(super) fn is_right(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("right"))
+        matches!(self.data.get(..self.rd), Some(keycode!("right")))
     }
 
     /// Checks whether the last keypress is the left-arrow.
     pub(super) fn is_left(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("left"))
+        matches!(self.data.get(..self.rd), Some(keycode!("left")))
     }
 
     /// Checks whether the last keypress is CTRL-e.
     pub(super) fn is_ctrl_e(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("ctrl-e"))
+        matches!(self.data.get(..self.rd), Some(keycode!("ctrl-e")))
     }
 
     /// Checks whether the last keypress is CTRL-y.
     pub(super) fn is_ctrl_y(&self) -> bool {
-        matches!(self.data[..self.rd], keycode!("ctrl-y"))
+        matches!(self.data.get(..self.rd), Some(keycode!("ctrl-y")))
     }
 }

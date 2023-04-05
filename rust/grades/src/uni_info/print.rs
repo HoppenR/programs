@@ -26,8 +26,16 @@
 use crate::ui::term::attributes::{BLD, BLU, CUR, CYN, GRN, RED, RST, STK, UDL, YLW};
 use crate::ui::term::{ERASE_TO_DISP_END, ERASE_TO_LINE_END};
 use crate::uni_info::cursor::Cursor;
-use crate::uni_info::{Course, CursorLevel, Grade, Moment, UniInfo};
+use crate::uni_info::{Course, Grade, Level, Moment, UniInfo};
 use std::fmt::{self, Display, Formatter};
+
+const INDENT_WIDTH: usize = 4;
+const ELLIPSIS: char = '\u{2026}';
+const CHECKMARK: char = '\u{2713}';
+const CROSS: char = '\u{2717}';
+const BARS: char = '\u{2016}';
+const ARROW: &str = "\u{2192}";
+const DOT: char = '\u{2022}';
 
 /// Helper struct to implement `Display` for a tuple when iterating over `Tasks`.
 struct PrintableTask {
@@ -35,54 +43,52 @@ struct PrintableTask {
     completed: bool,
 }
 
-const INDENT_WIDTH: usize = 4;
-
 /// Writes and formats a `uni_info` object using their `Display` implementations.
 /// The leading indentation is given in the `start` parameter.
-fn write_entry<T>(f: &mut Formatter, entry: &T, targeted: bool, indent_amount: usize) -> fmt::Result
+fn write_entry<T>(f: &mut Formatter<'_>, entry: &T, targeted: bool, indents: usize) -> fmt::Result
 where
     T: Display,
 {
     write!(
         f,
         "{indicator}{lead:width$}{entry}{ERASE_TO_LINE_END}\n\r",
-        indicator = if targeted { "→" } else { "" },
+        indicator = if targeted { ARROW } else { "" },
         lead = "",
-        width = indent_amount * INDENT_WIDTH,
+        width = indents * INDENT_WIDTH,
     )
 }
 
 /// Writes and formats a string header in the menu.
 /// The leading indentation is given in the `start` parameter.
 fn write_header(
-    f: &mut Formatter,
+    f: &mut Formatter<'_>,
     title: &str,
     index: usize,
     targeted: bool,
-    indent_amount: usize,
+    indents: usize,
 ) -> fmt::Result {
     write!(
         f,
-        "{indicator}{lead:width$}• {title} {index}:{ERASE_TO_LINE_END}\n\r",
-        indicator = if targeted { "→" } else { "" },
+        "{indicator}{lead:width$}{DOT} {title} {index}:{ERASE_TO_LINE_END}\n\r",
+        indicator = if targeted { ARROW } else { "" },
         lead = "",
-        width = indent_amount * INDENT_WIDTH,
+        width = indents * INDENT_WIDTH,
     )
 }
 
 /// Writes and formats the average grade of the `courses` parameter,
 /// as well as its current and total credits.
 /// The leading indentation is given in the `start` parameter.
-fn write_progress(f: &mut Formatter, courses: &Vec<&Course>, indent_amount: usize) -> fmt::Result {
+fn write_progress(f: &mut Formatter<'_>, courses: &Vec<&Course>, indents: usize) -> fmt::Result {
     let mut accrued_creds: f32 = 0.0;
     let mut total_creds: f32 = 0.0;
-    let mut grades: Vec<usize> = Vec::new();
+    let mut total_items: f32 = 0.0;
+    let mut grades: Vec<u8> = Vec::new();
     for course in courses {
         total_creds += course.max_credits();
         accrued_creds += course.sum_credits();
         match course.grade {
-            Grade::Completed(_) => {}
-            Grade::Ongoing => {}
+            Grade::Completed(_) | Grade::Ongoing => {}
             Grade::Grade(grade) => match grade {
                 (3..=5) => {
                     grades.push(grade);
@@ -90,21 +96,22 @@ fn write_progress(f: &mut Formatter, courses: &Vec<&Course>, indent_amount: usiz
                 _ => return Err(fmt::Error),
             },
         }
+        total_items += 1.0;
     }
-    let average: f32 = grades.iter().sum::<usize>() as f32 / grades.len() as f32;
+    let average: f32 = f32::from(grades.iter().sum::<u8>()) / total_items;
     write!(
         f,
-        "{lead:width$}{avg_color}{average:.3}{RST}avg ‖ \
+        "{lead:width$}{avg_color}{average:.3}{RST}avg {BARS} \
         {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{ERASE_TO_LINE_END}\n\r",
         lead = "",
-        width = indent_amount * INDENT_WIDTH,
+        width = indents * INDENT_WIDTH,
         avg_color = if f32::is_nan(average) { RED } else { CYN },
         cred_color = if accrued_creds == 0.0 { RED } else { CYN },
     )
 }
 
 impl Display for UniInfo {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut all_courses: Vec<&Course> = Vec::new();
         let mut semester_courses: Vec<&Course> = Vec::new();
         let mut period_courses: Vec<&Course> = Vec::new();
@@ -114,23 +121,23 @@ impl Display for UniInfo {
         )?;
         for (sem_ix, sem) in self.menu.iter().enumerate() {
             let cursor = Cursor {
-                semester_ix: sem_ix,
-                level: CursorLevel::Semester,
+                semester: sem_ix,
+                level: Level::Semester,
                 ..Default::default()
             };
             write_header(f, "Semester", sem_ix + 1, self.cursor == cursor, 0)?;
             for (period_ix, period) in sem.iter().enumerate() {
                 let cursor = Cursor {
-                    period_ix,
-                    level: CursorLevel::Period,
+                    period: period_ix,
+                    level: Level::Period,
                     ..cursor
                 };
                 write_header(f, "Period", period_ix + 1, self.cursor == cursor, 1)?;
                 for (course_ix, course) in period.iter().enumerate() {
                     period_courses.push(course);
                     let cursor = Cursor {
-                        course_ix,
-                        level: CursorLevel::Course,
+                        course: course_ix,
+                        level: Level::Course,
                         ..cursor
                     };
                     write_entry(f, course, self.cursor == cursor, 2)?;
@@ -139,8 +146,8 @@ impl Display for UniInfo {
                     }
                     for (moment_ix, moment) in course.moments.iter().enumerate() {
                         let cursor = Cursor {
-                            moment_ix,
-                            level: CursorLevel::Moment,
+                            moment: moment_ix,
+                            level: Level::Moment,
                             ..cursor
                         };
                         write_entry(f, moment, self.cursor == cursor, 3)?;
@@ -148,8 +155,8 @@ impl Display for UniInfo {
                             for (task_ix, task) in tasks.iter().map(PrintableTask::from).enumerate()
                             {
                                 let cursor = Cursor {
-                                    task_ix,
-                                    level: CursorLevel::Task,
+                                    task: task_ix,
+                                    level: Level::Task,
                                     ..cursor
                                 };
                                 write_entry(f, &task, self.cursor == cursor, 4)?;
@@ -169,23 +176,23 @@ impl Display for UniInfo {
 }
 
 impl Display for Course {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let (color, symbol): (&str, char) = match self.grade {
             Grade::Completed(passed) => {
                 if passed {
-                    Ok((GRN, '✓'))
+                    Ok((GRN, CHECKMARK))
                 } else {
-                    Ok((RED, '✗'))
+                    Ok((RED, CROSS))
                 }
             }
             Grade::Grade(grade) => match grade {
                 (3..=5) => {
-                    let grade_ch: char = (u8::try_from(grade).unwrap() + b'0') as char;
+                    let grade_ch: char = (grade + b'0') as char;
                     Ok((GRN, grade_ch))
                 }
                 _ => Err(fmt::Error),
             },
-            Grade::Ongoing => Ok((BLU, '…')),
+            Grade::Ongoing => Ok((BLU, ELLIPSIS)),
         }?;
         write!(
             f,
@@ -198,7 +205,7 @@ impl Display for Course {
 }
 
 impl Display for Moment {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{marker}[{code}] {YLW}{CUR}{description}{RST} {credits:.1}hp",
@@ -211,7 +218,7 @@ impl Display for Moment {
 }
 
 impl Display for PrintableTask {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{marker}{task_name}{RST}",
@@ -224,7 +231,7 @@ impl Display for PrintableTask {
 /// Helper function to convert a key-value pair from a `Tasks` object.
 impl From<(&String, &bool)> for PrintableTask {
     fn from(value: (&String, &bool)) -> Self {
-        PrintableTask {
+        Self {
             name: value.0.clone(),
             completed: *value.1,
         }
