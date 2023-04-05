@@ -1,4 +1,4 @@
-//! Functions and structs for navigating through UniInfo
+//! Functions and structs for navigating through `UniInfo`
 //!
 //! This module contains functions for basic navigation around the `UniInfo`
 //! structures indented to be used both for representing a graphical cursor on

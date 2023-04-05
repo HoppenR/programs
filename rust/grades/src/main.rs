@@ -8,13 +8,13 @@ mod uni_info;
 
 use std::env;
 use std::fs;
-use std::io::{Error, ErrorKind};
+use std::io;
 use ui::UI;
 use uni_info::UniInfo;
 
 macro_rules! err_usage {
     () => {
-        Error::new(ErrorKind::InvalidInput, "usage: `cargo run <filepath>`")
+        io::Error::new(io::ErrorKind::InvalidInput, "usage: `cargo run <filepath>`")
     };
 }
 
@@ -22,7 +22,7 @@ macro_rules! err_usage {
 
 /// Run the editing program, reading the file at command line arg 1.
 /// Saves the JSON data back to disk if no errors occur.
-fn main() -> Result<(), Error> {
+fn main() -> io::Result<()> {
     // -- ARGS --
     let args: Vec<String> = env::args().collect();
     let file_path: &str = args.get(1).ok_or_else(|| err_usage!())?;

@@ -27,9 +27,11 @@ pub(super) mod term;
 use crate::uni_info::cursor::CursorLevel;
 use crate::uni_info::{Grade, UniInfo};
 use key::Key;
-use std::io::Error;
+use std::io;
 use term::Term;
 
+/// An object that represents I/O, data, and information about how to present
+/// the data on screen.
 pub(super) struct UI<'a> {
     key: Key<'a>,
     term: Term<'a>,
@@ -37,17 +39,18 @@ pub(super) struct UI<'a> {
     offset: usize,
 }
 
-impl<'a> Drop for UI<'a> {
+impl Drop for UI<'_> {
     fn drop(&mut self) {
-        if self.finish().is_err() {
-            panic!("Error restoring terminal in UI::drop");
-        }
+        assert!(
+            self.finish().is_ok(),
+            "Error restoring terminal in UI::drop"
+        );
     }
 }
 
 impl<'a> UI<'a> {
     /// Sets up the terminal for the user interface, and creates a `UI` instance.
-    pub(super) fn new(uni: &'a mut UniInfo) -> Result<Self, Error> {
+    pub(super) fn new(uni: &'a mut UniInfo) -> io::Result<Self> {
         let mut term = Term::new();
         term.set_raw()?;
         term.switch_alternate_buffer()?;
@@ -65,7 +68,7 @@ impl<'a> UI<'a> {
     }
 
     /// Resets the terminal to the state prior to the `UI` instance creation.
-    fn finish(&mut self) -> Result<(), Error> {
+    fn finish(&mut self) -> io::Result<()> {
         self.term.enable_line_wrap()?;
         self.term.show_cursor()?;
         self.term.clear_buffer()?;
@@ -75,7 +78,7 @@ impl<'a> UI<'a> {
     }
 
     /// Main loop. Takes ownership of the `UI` instance, effectively dropping it.
-    pub(super) fn main_loop(mut self) -> Result<(), Error> {
+    pub(super) fn main_loop(mut self) -> io::Result<()> {
         loop {
             self.term.reset_cursor_pos()?;
             self.term.write_offset(self.uni, self.offset)?;
@@ -111,7 +114,7 @@ impl<'a> UI<'a> {
 
     /// Prompt the user for information regarding the creation of the currently
     /// targeted menu entry. Silently returns `Ok` on bad user input.
-    fn add_entry(&mut self) -> Result<(), Error> {
+    fn add_entry(&mut self) -> io::Result<()> {
         match self.uni.cursor_level() {
             CursorLevel::Semester => {
                 self.uni.add_semester();
@@ -151,26 +154,19 @@ impl<'a> UI<'a> {
     }
 
     /// Prompt the user for deletion of the targeted entry.
-    /// Waits for a valid y/n input.
-    fn delete_entry(&mut self) -> Result<(), Error> {
+    /// Silently returns `Ok` on bad user input.
+    fn delete_entry(&mut self) -> io::Result<()> {
         self.prompt_line("Delete entry? [y]es [n]o")?;
         self.key.read()?;
-        loop {
-            match self.key.as_printable_ascii() {
-                Some('y') | Some('Y') => {
-                    self.uni.delete_entry();
-                    break;
-                }
-                Some('n') | Some('N') => break,
-                _ => {}
-            }
+        if let Some('y' | 'Y') = self.key.as_printable_ascii() {
+            self.uni.delete_entry();
         }
         Ok(())
     }
 
     /// Prompt the user for information regarding the creation of a new `Grade`
     /// object. Silently returns `Ok` on bad user input.
-    fn construct_grade(&mut self) -> Result<Option<Grade>, Error> {
+    fn construct_grade(&mut self) -> io::Result<Option<Grade>> {
         self.prompt_line("Enter type [c]ompleted [g]rade [o]ngoing")?;
         self.key.read()?;
         match self.key.as_printable_ascii() {
@@ -200,7 +196,7 @@ impl<'a> UI<'a> {
     /// Manipulates the currently targeted entry, whereever possible.
     /// For entries that requires more information to edit, it prompts the user.
     /// Silently returns `Ok` on bad user input.
-    fn edit_entry(&mut self) -> Result<(), Error> {
+    fn edit_entry(&mut self) -> io::Result<()> {
         match self.uni.cursor_level() {
             CursorLevel::Semester => {}
             CursorLevel::Period => {}
@@ -216,7 +212,7 @@ impl<'a> UI<'a> {
     }
 
     /// Replace the current line with the prompt in `text`.
-    fn prompt_line(&mut self, text: &str) -> Result<(), Error> {
+    fn prompt_line(&mut self, text: &str) -> io::Result<()> {
         self.term.move_cursor_line_begin()?;
         self.term.write(&text)?;
         self.term.erase_to_line_end()?;
@@ -224,7 +220,7 @@ impl<'a> UI<'a> {
     }
 
     /// Read printable utf-8 text until the user presses enter.
-    fn read_line(&mut self) -> Result<String, Error> {
+    fn read_line(&mut self) -> io::Result<String> {
         let mut line = String::new();
         loop {
             self.key.read()?;
@@ -248,7 +244,8 @@ impl<'a> UI<'a> {
         Ok(line)
     }
 
-    fn show_keybinds(&mut self) -> Result<(), Error> {
+    /// Prints the available keybinds for each cursor level in the menu.
+    fn show_keybinds(&mut self) -> io::Result<()> {
         match self.uni.cursor_level() {
             CursorLevel::Semester => self.prompt_line("[a]dd [d]elete        {hjkl | ←↓↑→} [q]uit"),
             CursorLevel::Period => self.prompt_line("                      {hjkl | ←↓↑→} [q]uit"),
