@@ -78,7 +78,8 @@ impl<'a> UI<'a> {
     }
 
     /// Main loop. Takes ownership of the `UI` instance, effectively dropping it.
-    pub(super) fn main_loop(mut self) -> io::Result<()> {
+    /// Returns whether user wants to save data to file.
+    pub(super) fn main_loop(mut self) -> io::Result<bool> {
         loop {
             self.term.reset_cursor_pos()?;
             self.term.write_offset(self.uni, self.offset)?;
@@ -109,7 +110,7 @@ impl<'a> UI<'a> {
                 _ => {}
             }
         }
-        Ok(())
+        self.save_quit()
     }
 
     /// Prompt the user for information regarding the creation of the currently
@@ -157,11 +158,23 @@ impl<'a> UI<'a> {
     /// Silently returns `Ok` on bad user input.
     fn delete_entry(&mut self) -> io::Result<()> {
         self.prompt_line("Delete entry? [y]es [n]o")?;
-        self.key.read()?;
-        if let Some('y' | 'Y') = self.key.as_printable_ascii() {
+        if self.read_confirm()? {
             self.uni.delete_entry();
         }
         Ok(())
+    }
+
+    /// Prompt the user for saving when quitting
+    /// Silently returns `Ok(false)` on bad user input.
+    fn save_quit(&mut self) -> io::Result<bool> {
+        self.prompt_line("Save to file? [y]es [n]o")?;
+        self.read_confirm()
+    }
+
+    /// Reads user input and returns whether user pressed 'y' or 'Y'.
+    fn read_confirm(&mut self) -> io::Result<bool> {
+        self.key.read()?;
+        Ok(matches!(self.key.as_printable_ascii(), Some('y' | 'Y')))
     }
 
     /// Prompt the user for information regarding the creation of a new `Grade`
