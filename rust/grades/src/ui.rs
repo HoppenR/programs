@@ -24,7 +24,7 @@
 mod key;
 pub(super) mod term;
 
-use crate::uni_info::cursor::CursorLevel;
+use crate::uni_info::cursor::Level;
 use crate::uni_info::{Grade, UniInfo};
 use key::Key;
 use std::io;
@@ -86,7 +86,7 @@ impl<'a> UI<'a> {
             self.show_keybinds()?;
             self.term.flush()?;
             self.key.read()?;
-            match self.key.as_printable_ascii() {
+            match &self.key.as_printable_ascii() {
                 Some(' ') => {
                     self.edit_entry()?;
                     self.uni.cursor_down();
@@ -116,11 +116,11 @@ impl<'a> UI<'a> {
     /// Prompt the user for information regarding the creation of the currently
     /// targeted menu entry. Silently returns `Ok` on bad user input.
     fn add_entry(&mut self) -> io::Result<()> {
-        match self.uni.cursor_level() {
-            CursorLevel::Semester => {
+        match &self.uni.cursor_level() {
+            Level::Semester => {
                 self.uni.add_semester();
             }
-            CursorLevel::Period => {
+            Level::Period => {
                 self.prompt_line("Enter code: ")?;
                 let code: String = self.read_line()?;
                 self.prompt_line("Enter credits: ")?;
@@ -131,7 +131,7 @@ impl<'a> UI<'a> {
                     self.uni.add_course(code, grade, name);
                 }
             }
-            CursorLevel::Course => {
+            Level::Course => {
                 self.prompt_line("Enter code: ")?;
                 let code: String = self.read_line()?;
                 self.prompt_line("Enter credits: ")?;
@@ -144,12 +144,12 @@ impl<'a> UI<'a> {
                     }
                 }
             }
-            CursorLevel::Moment => {
+            Level::Moment => {
                 self.prompt_line("Enter name: ")?;
                 let name: String = self.read_line()?;
                 self.uni.add_task(name);
             }
-            CursorLevel::Task => {}
+            Level::Task => {}
         }
         Ok(())
     }
@@ -182,11 +182,11 @@ impl<'a> UI<'a> {
     fn construct_grade(&mut self) -> io::Result<Option<Grade>> {
         self.prompt_line("Enter type [c]ompleted [g]rade [o]ngoing")?;
         self.key.read()?;
-        match self.key.as_printable_ascii() {
+        match &self.key.as_printable_ascii() {
             Some('c') => {
                 self.prompt_line("Enter value [p]assed [f]ailed")?;
                 self.key.read()?;
-                match self.key.as_printable_ascii() {
+                match &self.key.as_printable_ascii() {
                     Some('p') => Ok(Some(Grade::Completed(true))),
                     Some('f') => Ok(Some(Grade::Completed(false))),
                     _ => Ok(None),
@@ -196,7 +196,7 @@ impl<'a> UI<'a> {
                 self.prompt_line("Enter value [3] [4] [5]")?;
                 self.key.read()?;
                 if matches!(self.key.as_printable_ascii(), Some('3'..='5')) {
-                    let grade: usize = self.key.as_char_unchecked() as usize - '0' as usize;
+                    let grade: u8 = self.key.as_char_unchecked() as u8 - b'0';
                     return Ok(Some(Grade::Grade(grade)));
                 }
                 Ok(None)
@@ -210,16 +210,15 @@ impl<'a> UI<'a> {
     /// For entries that requires more information to edit, it prompts the user.
     /// Silently returns `Ok` on bad user input.
     fn edit_entry(&mut self) -> io::Result<()> {
-        match self.uni.cursor_level() {
-            CursorLevel::Semester => {}
-            CursorLevel::Period => {}
-            CursorLevel::Course => {
+        match &self.uni.cursor_level() {
+            Level::Semester | Level::Period => {}
+            Level::Course => {
                 if let Some(grade) = self.construct_grade()? {
                     self.uni.set_selected_course(grade);
                 }
             }
-            CursorLevel::Moment => self.uni.toggle_selected_moment(),
-            CursorLevel::Task => self.uni.toggle_selected_task(),
+            Level::Moment => self.uni.toggle_selected_moment(),
+            Level::Task => self.uni.toggle_selected_task(),
         };
         Ok(())
     }
@@ -237,9 +236,9 @@ impl<'a> UI<'a> {
         let mut line = String::new();
         loop {
             self.key.read()?;
-            match self.key.as_printable_utf8() {
+            match &self.key.as_printable_utf8() {
                 Some(ch) => {
-                    line.push(ch);
+                    line.push(*ch);
                     self.term.write(&ch)?;
                 }
                 None if self.key.is_backspace() => {
@@ -259,12 +258,22 @@ impl<'a> UI<'a> {
 
     /// Prints the available keybinds for each cursor level in the menu.
     fn show_keybinds(&mut self) -> io::Result<()> {
-        match self.uni.cursor_level() {
-            CursorLevel::Semester => self.prompt_line("[a]dd [d]elete        {hjkl | ←↓↑→} [q]uit"),
-            CursorLevel::Period => self.prompt_line("                      {hjkl | ←↓↑→} [q]uit"),
-            CursorLevel::Course => self.prompt_line("[a]dd [d]elete [e]dit {hjkl | ←↓↑→} [q]uit"),
-            CursorLevel::Moment => self.prompt_line("[a]dd [d]elete [e]dit {hjkl | ←↓↑→} [q]uit"),
-            CursorLevel::Task => self.prompt_line("      [d]elete [e]dit {hjkl | ←↓↑→} [q]uit"),
+        match &self.uni.cursor_level() {
+            Level::Semester => self.prompt_line(
+                "S> [a]dd [d]elete        {hjkl | \u{2190}\u{2193}\u{2191}\u{2192}} [q]uit",
+            ),
+            Level::Period => self.prompt_line(
+                "P>                       {hjkl | \u{2190}\u{2193}\u{2191}\u{2192}} [q]uit",
+            ),
+            Level::Course => self.prompt_line(
+                "C> [a]dd [d]elete [e]dit {hjkl | \u{2190}\u{2193}\u{2191}\u{2192}} [q]uit",
+            ),
+            Level::Moment => self.prompt_line(
+                "M> [a]dd [d]elete [e]dit {hjkl | \u{2190}\u{2193}\u{2191}\u{2192}} [q]uit",
+            ),
+            Level::Task => self.prompt_line(
+                "T>       [d]elete [e]dit {hjkl | \u{2190}\u{2193}\u{2191}\u{2192}} [q]uit",
+            ),
         }
     }
 }

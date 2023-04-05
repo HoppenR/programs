@@ -138,7 +138,7 @@ impl Term<'_> {
             let mut raw_termios: termios = self.old_termios;
             libc::cfmakeraw(&mut raw_termios);
             cvt_err(libc::tcsetattr(STDOUT_FILENO, TCSANOW, &raw_termios))?;
-        }
+        };
         self.is_raw = true;
         Ok(())
     }
@@ -224,7 +224,7 @@ impl Term<'_> {
         }
         unsafe {
             cvt_err(libc::tcsetattr(STDOUT_FILENO, TCSANOW, &self.old_termios))?;
-        }
+        };
         self.is_raw = false;
         Ok(())
     }
