@@ -25,7 +25,7 @@ mod uni_info;
 
 use std::env;
 use std::fs;
-use std::io;
+use std::io::{self, Seek, Write};
 use ui::UI;
 use uni_info::UniInfo;
 
@@ -35,28 +35,40 @@ macro_rules! err_usage {
     };
 }
 
-// TODO: Dont prompt for saving if no changes?
+// TODO: Add a README.md
 
 /// Run the editing program, reading the file at command line arg 1.
-/// Saves the JSON data back to disk if no errors occur.
+/// Creates the file it it does not exist.
+/// Saves the JSON data back to disk if no errors occur and the user confirms it.
 fn main() -> io::Result<()> {
-    // -- ARGS --
     let args: Vec<String> = env::args().collect();
+    if args.len() > 2 {
+        return Err(err_usage!());
+    }
     let file_path: &str = args.get(1).ok_or_else(|| err_usage!())?;
 
-    // -- LOAD --
-    let load_json_data: String = fs::read_to_string(file_path)?;
-    let mut uni: UniInfo = serde_json::from_str(&load_json_data)?;
+    let mut file: fs::File = fs::File::options()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(file_path)?;
 
-    // --- UI ---
+    if file.metadata().map_or(0, |md| md.len()) == 0 {
+        file.write_all(b"[]")?;
+        file.rewind()?;
+    }
+    let mut uni: UniInfo = serde_json::from_reader(&file)?;
+
     let ui = UI::new(&mut uni)?;
     let should_save: bool = ui.main_loop()?;
 
-    // -- SAVE --
     if should_save {
-        let save_json_data: String = serde_json::to_string_pretty(&uni)?;
-        fs::write(file_path, save_json_data)?;
+        file.rewind()?;
+        serde_json::to_writer_pretty(&file, &uni)?;
+        let new_len: u64 = file.stream_position()?;
+        file.set_len(new_len)?;
     }
 
+    file.sync_all()?;
     Ok(())
 }
