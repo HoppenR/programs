@@ -162,6 +162,9 @@ impl UniInfo {
     pub(super) fn delete_entry(&mut self) {
         let (entries, cursorpos) = match self.cursor.level {
             Level::Semester => {
+                if self.sel_menu_entries() == 0 {
+                    return;
+                }
                 let ix: usize = self.cursor.semester;
                 drop(self.sel_menu_mut().remove(ix));
                 (self.sel_menu_entries(), ix)
