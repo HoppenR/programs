@@ -75,6 +75,7 @@ type Tasks = BTreeMap<String, bool>;
 /// A struct that represents university info, as well as data and bindings to
 /// navigate a menu of its data members.
 impl UniInfo {
+    /// Returns the enum `Level` representing which level the cursor is on.
     pub(super) const fn cursor_level(&self) -> &Level {
         &self.cursor.level
     }

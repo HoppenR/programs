@@ -3,7 +3,8 @@
 //! This terminal program aims to provide easy, safe, and intuitive
 //! manipulation, and record keeping of university grades, sub-grades and tasks.
 
-#![warn(
+// Clippy lint groups {{{
+#![deny(
     clippy::all,
     clippy::cargo,
     clippy::complexity,
@@ -17,6 +18,7 @@
     clippy::suspicious,
 )]
 #![allow(clippy::redundant_pub_crate)]
+// }}}
 
 mod ui;
 mod uni_info;
@@ -32,6 +34,8 @@ macro_rules! err_usage {
         io::Error::new(io::ErrorKind::InvalidInput, "usage: `cargo run <filepath>`")
     };
 }
+
+// TODO: Dont prompt for saving if no changes?
 
 /// Run the editing program, reading the file at command line arg 1.
 /// Saves the JSON data back to disk if no errors occur.

@@ -31,19 +31,19 @@ use std::fmt::Display;
 use std::io::{self, StdoutLock, Write};
 use std::mem;
 
-/// Terminal codes to change the attributes of text.
-/// This is a convenience module, intended to be imported as `term::attributes::*;`
-/// so that you can directly include attribute constants in formatting strings.
-///
-/// # Usage
-///
-/// An example usage of this is:
-///
-/// ```
-/// use term::attributes::*;
-/// println!("{RED}{BLD}Red bold text here!{RST} Normal text now");
-/// ```
 pub(crate) mod attributes {
+    //! Terminal codes to change the attributes of text.
+    //! This is a convenience module, intended to be imported as `term::attributes::*;`
+    //! so that you can directly include attribute constants in formatting strings.
+    //!
+    //! # Usage
+    //!
+    //! An example usage of this is:
+    //!
+    //! ```
+    //! use term::attributes::*;
+    //! println!("{RED}{BLD}Red bold text here!{RST} Normal text now");
+    //! ```
     /// Reset the color and attributes.
     pub(crate) const RST: &str = "\x1b[0m";
     /// Set attribute `bold`.
@@ -70,25 +70,18 @@ pub(crate) mod attributes {
 pub(crate) const ERASE_TO_LINE_END: &str = "\x1b[0K";
 /// Clear the terminal contents from the terminal cursor to the end of the display.
 pub(crate) const ERASE_TO_DISP_END: &str = "\x1b[J";
-/// Switch to the alternate terminal buffer.
 const BUFFER_ALTERNATE: &str = "\x1b[?1049h";
-/// Clear the current buffer.
 const BUFFER_CLEAR: &str = "\x1b2J";
-/// Switch to the primary terminal buffer.
 const BUFFER_PRIMARY: &str = "\x1b[?1049l";
-/// Move the cursor to upper left corner `(0, 0)`.
 const CURSOR_HOME: &str = "\x1b[H";
-/// Hide the terminal cursor.
 const CURSOR_INVIS: &str = "\x1b[?25l";
-/// Show the terminal cursor.
 const CURSOR_VISIBLE: &str = "\x1b[?25h";
-/// Move the cursor one step to the left.
 const CURSOR_LEFT: &str = "\x1b[D";
-/// Disable line wrap
 const LINEWRAP_DISABLE: &str = "\x1b[?7l";
-/// Enable line wrap
 const LINEWRAP_ENABLE: &str = "\x1b[?7h";
 
+/// A struct representing information and functions regarding sending
+/// information to a terminal.
 pub(super) struct Term<'a> {
     old_termios: termios,
     os: StdoutLock<'a>,
@@ -96,6 +89,7 @@ pub(super) struct Term<'a> {
     size: TermSize,
 }
 
+/// Compatibility libc struct for passing to libc functions.
 struct TermSize {
     row: c_ushort,
     #[allow(dead_code)]
@@ -116,8 +110,8 @@ impl Drop for Term<'_> {
 }
 
 impl Term<'_> {
-    /// Creates a `Term` object that simplifies interacting with a terminal
-    /// that may be put into raw mode.
+    /// Creates a `Term` object with all fields zero-initialized.
+    /// Creates a standard output lock.
     pub(super) fn new() -> Self {
         Term {
             old_termios: unsafe { mem::zeroed() },
@@ -128,7 +122,7 @@ impl Term<'_> {
     }
 
     /// Sets the terminal into raw-mode. Saves the terminal I/O interfaces settings
-    /// that can be used to restore the terminal after it is finished being used raw.
+    /// that are used to restore the terminal after it is finished being used raw.
     pub(super) fn set_raw(&mut self) -> io::Result<()> {
         if self.is_raw {
             return Ok(());
@@ -143,7 +137,8 @@ impl Term<'_> {
         Ok(())
     }
 
-    pub(super) fn write_offset<T>(&mut self, contents: &T, offset: usize) -> io::Result<()>
+    /// Format and write the contents to stdout, skipping the first `offset` lines.
+    pub(super) fn write_skip<T>(&mut self, contents: &T, offset: usize) -> io::Result<()>
     where
         T: Display,
     {
@@ -157,10 +152,12 @@ impl Term<'_> {
         self.write(&output)
     }
 
+    /// Updates information about the size of the terminal.
     fn update_size(&mut self) -> io::Result<()> {
         unsafe { cvt_err(libc::ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut self.size)) }
     }
 
+    /// Format and write the contents to stdout.
     pub(super) fn write<T>(&mut self, contents: &T) -> io::Result<()>
     where
         T: Display,
@@ -168,50 +165,62 @@ impl Term<'_> {
         write!(self.os, "{contents}")
     }
 
+    /// Switch to the alternate terminal buffer.
     pub(super) fn switch_alternate_buffer(&mut self) -> io::Result<()> {
         write!(self.os, "{BUFFER_ALTERNATE}")
     }
 
-    pub(super) fn switch_primary_buffer(&mut self) -> io::Result<()> {
-        write!(self.os, "{BUFFER_PRIMARY}")
-    }
-
+    /// Clear the current terminal buffer.
     pub(super) fn clear_buffer(&mut self) -> io::Result<()> {
         write!(self.os, "{BUFFER_CLEAR}")
     }
 
+    /// Switch to the primary terminal buffer.
+    pub(super) fn switch_primary_buffer(&mut self) -> io::Result<()> {
+        write!(self.os, "{BUFFER_PRIMARY}")
+    }
+
+    /// Move the cursor to upper left corner `(0, 0)`.
     pub(super) fn reset_cursor_pos(&mut self) -> io::Result<()> {
         write!(self.os, "{CURSOR_HOME}")
     }
 
+    /// Hide the terminal cursor.
     pub(super) fn hide_cursor(&mut self) -> io::Result<()> {
         write!(self.os, "{CURSOR_INVIS}")
     }
 
+    /// Show the terminal cursor.
     pub(super) fn show_cursor(&mut self) -> io::Result<()> {
         write!(self.os, "{CURSOR_VISIBLE}")
     }
 
+    /// Move the cursor one step to the left.
     pub(super) fn move_cursor_left(&mut self) -> io::Result<()> {
         write!(self.os, "{CURSOR_LEFT}")
     }
 
+    /// Moves the cursor to the beginning of the current line.
     pub(super) fn move_cursor_line_begin(&mut self) -> io::Result<()> {
         write!(self.os, "\r")
     }
 
+    /// Clear the terminal contents from the terminal cursor to the end of the line.
     pub(super) fn erase_to_line_end(&mut self) -> io::Result<()> {
         write!(self.os, "{ERASE_TO_LINE_END}")
     }
 
+    /// Disable line wrap, making writes off the edge of the screen appear on the next.
     pub(super) fn disable_line_wrap(&mut self) -> io::Result<()> {
         write!(self.os, "{LINEWRAP_DISABLE}")
     }
 
+    /// Enable line wrap, making writes off the edge of the screen disappear.
     pub(super) fn enable_line_wrap(&mut self) -> io::Result<()> {
         write!(self.os, "{LINEWRAP_ENABLE}")
     }
 
+    /// Flush the terminal buffer. Making sure all characters rech their destination.
     pub(super) fn flush(&mut self) -> io::Result<()> {
         self.os.flush()
     }

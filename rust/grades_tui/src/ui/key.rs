@@ -57,7 +57,8 @@ macro_rules! keycode {
     };
 }
 
-/// `Key` represents keywise input for a program.
+/// A struct representing information and functions regarding recieving
+/// data from a terminal, especially keypress events.
 pub(super) struct Key<'a> {
     data: [u8; 6],
     is: StdinLock<'a>,
@@ -65,6 +66,8 @@ pub(super) struct Key<'a> {
 }
 
 impl Key<'_> {
+    /// Returns a new instance of `Key` with all fields default initialized.
+    /// Creates a standard input lock.
     pub(super) fn new() -> Self {
         Key {
             data: [0; 6],
@@ -96,7 +99,6 @@ impl Key<'_> {
 
     /// Returns an optional character if the last keypress is representable
     /// as a printable utf8-character.
-    ///
     pub(super) fn as_printable_utf8(&self) -> Option<char> {
         str::from_utf8(self.data.get(..self.rd).unwrap_or(&[])).map_or(None, |data_str| {
             match data_str.chars().next() {

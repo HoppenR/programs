@@ -40,6 +40,8 @@ pub(crate) enum Level {
     Task,
 }
 
+/// A struct containing information regarding which indexes it points at/via,
+/// and which level it currently is on.
 #[derive(Default, PartialEq, Eq)]
 pub(super) struct Cursor {
     pub(super) semester: usize,
@@ -62,7 +64,8 @@ impl Cursor {
         }
     }
 
-    /// Unindents the cursor and sets the old level to 0 for future comparisons.
+    /// Unindents the cursor and sets the old level to 0 so that it can more
+    /// easily be compared to other cursors with those fields left uninitialized.
     pub(super) fn exit(&mut self) {
         match self.level {
             Level::Semester => {
