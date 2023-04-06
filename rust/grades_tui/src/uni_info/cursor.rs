@@ -30,7 +30,7 @@
 
 use std::cmp;
 
-#[derive(Default, PartialEq, Eq)]
+#[derive(Default, PartialEq)]
 pub(crate) enum Level {
     #[default]
     Semester,
@@ -42,7 +42,7 @@ pub(crate) enum Level {
 
 /// A struct containing information regarding which indexes it points at/via,
 /// and which level it currently is on.
-#[derive(Default, PartialEq, Eq)]
+#[derive(Default, PartialEq)]
 pub(super) struct Cursor {
     pub(super) semester: usize,
     pub(super) period: usize,
@@ -103,6 +103,9 @@ impl Cursor {
 
     /// Moves the cursor downward, but prevents the cursor from reaching the `max` value.
     pub(super) fn down(&mut self, max: usize) {
+        if max == 0 {
+            return;
+        }
         match self.level {
             Level::Semester => self.semester = cmp::min(self.semester + 1, max - 1),
             Level::Period => self.period = cmp::min(self.period + 1, max - 1),
