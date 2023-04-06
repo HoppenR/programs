@@ -1,13 +1,13 @@
 [package]
-name = "grades"
-version = "1.0.0"
-description = "A program to add and keep track of information regarding unversity undertakings such as grades and tasks"
+name = "grades_tui"
+version = "1.0.1"
+description = "A terminal program to add and keep track of information regarding unversity undertakings such as grades, averages, and tasks"
 repository = "https://github.com/HoppenR/programs/tree/master/rust/grades"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["grades", "terminal", "statistics"]
 edition = "2021"
-categories = ["command-line-interface", "command-line-utilities"]
+categories = ["command-line-interface", "command-line-utilities", "management", "school"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

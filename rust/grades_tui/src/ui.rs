@@ -82,7 +82,7 @@ impl<'a> UI<'a> {
     pub(super) fn main_loop(mut self) -> io::Result<bool> {
         loop {
             self.term.reset_cursor_pos()?;
-            self.term.write_offset(self.uni, self.offset)?;
+            self.term.write_skip(self.uni, self.offset)?;
             self.show_keybinds()?;
             self.term.flush()?;
             self.key.read()?;
@@ -104,8 +104,8 @@ impl<'a> UI<'a> {
                 None if self.key.is_down() => self.uni.cursor_down(),
                 None if self.key.is_up() => self.uni.cursor_up(),
                 None if self.key.is_right() => self.uni.cursor_enter(),
-                None if self.key.is_ctrl_e() => self.offset = self.offset.saturating_sub(1),
-                None if self.key.is_ctrl_y() => self.offset += 1,
+                None if self.key.is_ctrl_e() => self.offset += 1,
+                None if self.key.is_ctrl_y() => self.offset = self.offset.saturating_sub(1),
                 None if self.key.is_esc() => break,
                 _ => {}
             }
