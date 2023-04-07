@@ -25,7 +25,7 @@ mod uni_info;
 
 use std::env;
 use std::fs;
-use std::io::{self, Seek, Write};
+use std::io::{self, BufReader, Seek, Write};
 use ui::UI;
 use uni_info::UniInfo;
 
@@ -57,7 +57,7 @@ fn main() -> io::Result<()> {
         file.write_all(b"[]")?;
         file.rewind()?;
     }
-    let mut uni: UniInfo = serde_json::from_reader(&file)?;
+    let mut uni: UniInfo = serde_json::from_reader(BufReader::new(&file))?;
 
     let ui = UI::new(&mut uni)?;
     let should_save: bool = ui.main_loop()?;

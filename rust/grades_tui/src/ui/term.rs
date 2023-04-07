@@ -90,13 +90,11 @@ pub(super) struct Term<'a> {
 }
 
 /// Compatibility libc struct for passing to libc functions.
+#[repr(C)]
 struct TermSize {
     row: c_ushort,
-    #[allow(dead_code)]
     col: c_ushort,
-    #[allow(dead_code)]
     x_pixsz: c_ushort,
-    #[allow(dead_code)]
     y_pxsz: c_ushort,
 }
 
@@ -167,57 +165,57 @@ impl Term<'_> {
 
     /// Switch to the alternate terminal buffer.
     pub(super) fn switch_alternate_buffer(&mut self) -> io::Result<()> {
-        write!(self.os, "{BUFFER_ALTERNATE}")
+        self.os.write_all(BUFFER_ALTERNATE.as_bytes())
     }
 
     /// Clear the current terminal buffer.
     pub(super) fn clear_buffer(&mut self) -> io::Result<()> {
-        write!(self.os, "{BUFFER_CLEAR}")
+        self.os.write_all(BUFFER_CLEAR.as_bytes())
     }
 
     /// Switch to the primary terminal buffer.
     pub(super) fn switch_primary_buffer(&mut self) -> io::Result<()> {
-        write!(self.os, "{BUFFER_PRIMARY}")
+        self.os.write_all(BUFFER_PRIMARY.as_bytes())
     }
 
     /// Move the cursor to upper left corner `(0, 0)`.
     pub(super) fn reset_cursor_pos(&mut self) -> io::Result<()> {
-        write!(self.os, "{CURSOR_HOME}")
+        self.os.write_all(CURSOR_HOME.as_bytes())
     }
 
     /// Hide the terminal cursor.
     pub(super) fn hide_cursor(&mut self) -> io::Result<()> {
-        write!(self.os, "{CURSOR_INVIS}")
+        self.os.write_all(CURSOR_INVIS.as_bytes())
     }
 
     /// Show the terminal cursor.
     pub(super) fn show_cursor(&mut self) -> io::Result<()> {
-        write!(self.os, "{CURSOR_VISIBLE}")
+        self.os.write_all(CURSOR_VISIBLE.as_bytes())
     }
 
     /// Move the cursor one step to the left.
     pub(super) fn move_cursor_left(&mut self) -> io::Result<()> {
-        write!(self.os, "{CURSOR_LEFT}")
+        self.os.write_all(CURSOR_LEFT.as_bytes())
     }
 
     /// Moves the cursor to the beginning of the current line.
     pub(super) fn move_cursor_line_begin(&mut self) -> io::Result<()> {
-        write!(self.os, "\r")
+        self.os.write_all(b"\r")
     }
 
     /// Clear the terminal contents from the terminal cursor to the end of the line.
     pub(super) fn erase_to_line_end(&mut self) -> io::Result<()> {
-        write!(self.os, "{ERASE_TO_LINE_END}")
+        self.os.write_all(ERASE_TO_LINE_END.as_bytes())
     }
 
     /// Disable line wrap, making writes off the edge of the screen appear on the next.
     pub(super) fn disable_line_wrap(&mut self) -> io::Result<()> {
-        write!(self.os, "{LINEWRAP_DISABLE}")
+        self.os.write_all(LINEWRAP_DISABLE.as_bytes())
     }
 
     /// Enable line wrap, making writes off the edge of the screen disappear.
     pub(super) fn enable_line_wrap(&mut self) -> io::Result<()> {
-        write!(self.os, "{LINEWRAP_ENABLE}")
+        self.os.write_all(LINEWRAP_ENABLE.as_bytes())
     }
 
     /// Flush the terminal buffer. Making sure all characters rech their destination.
