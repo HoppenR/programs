@@ -35,7 +35,14 @@ macro_rules! err_usage {
     };
 }
 
-// TODO: Add a README.md
+// For 1.3.0:
+// TODO: [ ] Figure out if the cursor is off the screen
+//               - A `UniInfo::cursor_offset()` function that iterates through
+//                 all raw containers, using a cursor to keep track of its position
+//                 manually. Comparing to `UniInfo`s cursor to see when to return.
+//                 Should return amount of entries seen.
+//               - A way to see if `cursor_offset - term_height` is within
+//                 viewing distance of `ui.offset`. If not, scroll in that direction.
 
 /// Run the editing program, reading the file at command line arg 1.
 /// Creates the file it it does not exist.
