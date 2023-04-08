@@ -124,23 +124,27 @@ impl<'a> UI<'a> {
                 self.prompt_line("Enter code: ")?;
                 let code: String = self.read_line()?;
                 self.prompt_line("Enter credits: ")?;
-                let grade_option: Option<Grade> = self.construct_grade()?;
+                let grade_opt: Option<Grade> = self.construct_grade()?;
                 self.prompt_line("Enter name: ")?;
                 let name: String = self.read_line()?;
-                if let Some(grade) = grade_option {
+                if let Some(grade) = grade_opt {
                     self.uni.add_course(code, grade, name);
                 }
             }
             Level::Course => {
                 self.prompt_line("Enter code: ")?;
                 let code: String = self.read_line()?;
+                self.prompt_line("Enter code: ")?;
+                let grade_opt: Option<Grade> = self.construct_grade()?;
                 self.prompt_line("Enter credits: ")?;
                 let credits_str: String = self.read_line()?;
                 self.prompt_line("Enter description: ")?;
                 let description: String = self.read_line()?;
                 if let Ok(credits) = credits_str.parse() {
-                    if credits >= 0.0 {
-                        self.uni.add_moment(code, credits, description);
+                    if let Some(grade) = grade_opt {
+                        if credits >= 0.0 {
+                            self.uni.add_moment(code, grade, credits, description);
+                        }
                     }
                 }
             }
@@ -180,27 +184,15 @@ impl<'a> UI<'a> {
     /// Prompt the user for information regarding the creation of a new `Grade`
     /// object. Silently returns `Ok` on bad user input.
     fn construct_grade(&mut self) -> io::Result<Option<Grade>> {
-        self.prompt_line("Enter type [c]ompleted [g]rade [o]ngoing")?;
+        self.prompt_line("Enter type [3] [4] [5] [p]ass [f]fail [o]ngoing")?;
         self.key.read()?;
         match &self.key.as_printable_ascii() {
-            Some('c') => {
-                self.prompt_line("Enter value [p]assed [f]ailed")?;
-                self.key.read()?;
-                match &self.key.as_printable_ascii() {
-                    Some('p') => Ok(Some(Grade::Completed(true))),
-                    Some('f') => Ok(Some(Grade::Completed(false))),
-                    _ => Ok(None),
-                }
+            Some('3'..='5') => {
+                let grade: u8 = self.key.as_char_unchecked() as u8 - b'0';
+                Ok(Some(Grade::Grade(grade)))
             }
-            Some('g') => {
-                self.prompt_line("Enter value [3] [4] [5]")?;
-                self.key.read()?;
-                if matches!(self.key.as_printable_ascii(), Some('3'..='5')) {
-                    let grade: u8 = self.key.as_char_unchecked() as u8 - b'0';
-                    return Ok(Some(Grade::Grade(grade)));
-                }
-                Ok(None)
-            }
+            Some('p') => Ok(Some(Grade::Completed(true))),
+            Some('f') => Ok(Some(Grade::Completed(false))),
             Some('o') => Ok(Some(Grade::Ongoing)),
             _ => Ok(None),
         }
@@ -214,10 +206,14 @@ impl<'a> UI<'a> {
             Level::Semester | Level::Period => {}
             Level::Course => {
                 if let Some(grade) = self.construct_grade()? {
-                    self.uni.set_selected_course(grade);
+                    self.uni.set_course_grade(grade);
                 }
             }
-            Level::Moment => self.uni.toggle_selected_moment(),
+            Level::Moment => {
+                if let Some(grade) = self.construct_grade()? {
+                    self.uni.set_moment_grade(grade);
+                }
+            }
             Level::Task => self.uni.toggle_selected_task(),
         };
         Ok(())

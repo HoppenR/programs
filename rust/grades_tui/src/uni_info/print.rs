@@ -206,10 +206,27 @@ impl Display for Course {
 
 impl Display for Moment {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let (color, status): (&str, char) = match self.grade {
+            Grade::Completed(completed) => {
+                if completed {
+                    Ok((GRN, 'G'))
+                } else {
+                    Ok((RED, 'U'))
+                }
+            }
+            Grade::Grade(grade) => match grade {
+                (3..=5) => {
+                    let grade_ch: char = (grade + b'0') as char;
+                    Ok((GRN, grade_ch))
+                }
+                _ => Err(fmt::Error),
+            },
+            Grade::Ongoing => Ok((RED, ' ')),
+        }?;
         write!(
             f,
-            "{marker}[{code}] {YLW}{CUR}{description}{RST} {credits:.1}hp",
-            marker = if self.completed { STK } else { "" },
+            "[{color}{status}{RST}] {marker}[{code}] {YLW}{CUR}{description}{RST} {credits:.1}hp",
+            marker = if color == GRN { STK } else { "" },
             code = self.code,
             credits = self.credits,
             description = self.description,

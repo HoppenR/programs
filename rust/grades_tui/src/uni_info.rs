@@ -64,7 +64,7 @@ type Moments = Vec<Moment>;
 #[derive(Deserialize, Serialize)]
 struct Moment {
     code: String,
-    completed: bool,
+    grade: Grade,
     credits: f32,
     description: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -136,11 +136,17 @@ impl UniInfo {
         }
     }
 
-    pub(super) fn add_moment(&mut self, code: String, credits: f32, description: String) {
+    pub(super) fn add_moment(
+        &mut self,
+        code: String,
+        grade: Grade,
+        credits: f32,
+        description: String,
+    ) {
         if let Some(course) = self.sel_course_mut() {
             course.moments.push(Moment {
                 code,
-                completed: false,
+                grade,
                 credits,
                 description,
                 tasks: None,
@@ -205,17 +211,17 @@ impl UniInfo {
         }
     }
 
-    /// Sets the `grade` of the currently targeted `course` to `new_grade`.
-    pub(super) fn set_selected_course(&mut self, new_grade: Grade) {
+    /// Sets the `grade` of the currently targeted `Course` to `new_grade`.
+    pub(super) fn set_course_grade(&mut self, new_grade: Grade) {
         if let Some(course) = self.sel_course_mut() {
             course.grade = new_grade;
         }
     }
 
-    /// Toggles the completion of the currently selected moment on/off.
-    pub(super) fn toggle_selected_moment(&mut self) {
+    /// Sets the `grade` of the currently targeted `Moment` to `new_grade`.
+    pub(super) fn set_moment_grade(&mut self, new_grade: Grade) {
         if let Some(moment) = self.sel_moment_mut() {
-            moment.completed ^= true;
+            moment.grade = new_grade;
         }
     }
 
@@ -313,7 +319,9 @@ impl Course {
         return self
             .moments
             .iter()
-            .filter_map(|v| v.completed.then_some(v.credits))
+            .filter_map(|v| {
+                (!matches!(v.grade, Grade::Ongoing | Grade::Completed(false))).then_some(v.credits)
+            })
             .sum();
     }
 

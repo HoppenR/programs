@@ -1,10 +1,10 @@
 [package]
 name = "grades_tui"
-version = "1.1.0"
+version = "1.2.0"
 description = "A terminal program to add and keep track of information regarding unversity undertakings such as grades, averages, and tasks"
 repository = "https://github.com/HoppenR/programs/tree/master/rust/grades_tui"
 readme = "README.md"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 keywords = ["grades", "terminal", "statistics"]
 edition = "2021"
 categories = ["command-line-interface", "command-line-utilities", "management", "school"]
