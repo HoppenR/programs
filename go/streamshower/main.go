@@ -34,10 +34,10 @@ func main() {
 		"",
 		"get the embed string",
 	)
-	port := flag.String(
-		"p",
-		":8181",
-		"Port to transfer the data from the daemon. Unset to disable",
+	address := flag.String(
+		"a",
+		"127.0.0.1:8181",
+		"Address to transfer the data from the daemon. Unset to disable",
 	)
 	refreshTime := flag.Duration(
 		"r",
@@ -52,7 +52,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(
 			flag.CommandLine.Output(),
-			"Usage: %s [-b] [-p=PORT] [-r=DURATION] [-u=false]\n", os.Args[0],
+			"Usage: %s [-b] [-a=ADDRESS] [-r=DURATION] [-u=false]\n", os.Args[0],
 		)
 		flag.PrintDefaults()
 	}
@@ -112,7 +112,7 @@ func main() {
 		}
 
 		bg := sc.NewBG()
-		bg.SetAddress(*port)
+		bg.SetAddress(*address)
 		bg.SetAuthData(ad)
 		bg.SetInterval(*refreshTime)
 		bg.SetLiveCallback(notifyLives)
@@ -129,7 +129,7 @@ func main() {
 
 	if !*background {
 		ui := NewUI()
-		ui.SetPort(*port)
+		ui.SetAddress(*address)
 		err = ui.Run()
 		if err != nil {
 			log.Fatalln(err)

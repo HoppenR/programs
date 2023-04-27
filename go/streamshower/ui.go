@@ -20,7 +20,7 @@ type UI struct {
 	pg2   *FilterInput // "Filter-Twitch"
 	pg3   *FilterInput // "Filter-Strims"
 	pg4   *DialogueBox // "Refresh-Dialogue"
-	port  string
+	addr  string
 }
 
 type FilterInput struct {
@@ -45,12 +45,12 @@ type MainPage struct {
 	infoText    *tview.TextView
 }
 
-func (ui *UI) SetPort(port string) {
-	ui.port = port
+func (ui *UI) SetAddress(address string) {
+	ui.addr = address
 }
 
 func (ui *UI) updateStreams() error {
-	streams, err := sc.GetLocalServerData(ui.port)
+	streams, err := sc.GetLocalServerData(ui.addr)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (ui *UI) updateStreams() error {
 }
 
 func (ui *UI) forceRemoteUpdate() error {
-	resp, err := http.Post("http://127.0.0.1"+ui.port, "application/octet-stream", nil)
+	resp, err := http.Post("http://" + ui.addr, "application/octet-stream", nil)
 	if err != nil {
 		return err
 	}
