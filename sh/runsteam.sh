@@ -18,6 +18,7 @@ declare -A gamearray=(
 ["Borderlands 3"]="run/397540"
 ["Darkest Dungeon"]="run/262060"
 ["Darksburg"]="run/939100"
+["Deponia: The Complete Journey"]="run/292910"
 ["Dota 2"]="run/570"
 ["Downward"]="run/506900"
 ["Dreamfall Chapters"]="run/237850"
