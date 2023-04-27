@@ -102,7 +102,7 @@ fn write_progress(f: &mut Formatter<'_>, courses: &Vec<&Course>, indents: usize)
     write!(
         f,
         "{lead:width$}{avg_color}{average:.3}{RST}avg {BARS} \
-        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST}hp{ERASE_TO_LINE_END}\n\r",
+        {cred_color}{accrued_creds:.1}/{total_creds:.1}{RST} ECTS{ERASE_TO_LINE_END}\n\r",
         lead = "",
         width = indents * INDENT_WIDTH,
         avg_color = if f32::is_nan(average) { RED } else { CYN },
@@ -196,7 +196,7 @@ impl Display for Course {
         }?;
         write!(
             f,
-            "[{color}{symbol}{RST}] {UDL}{code}{RST} {BLD}{BLU}{name}{RST} {credits:.1}hp",
+            "[{color}{symbol}{RST}] {UDL}{code}{RST} {BLD}{BLU}{name}{RST} {credits:.1} ECTS",
             code = self.code,
             name = self.name,
             credits = self.max_credits(),
@@ -225,7 +225,7 @@ impl Display for Moment {
         }?;
         write!(
             f,
-            "[{color}{status}{RST}] {marker}[{code}] {YLW}{CUR}{description}{RST} {credits:.1}hp",
+            "[{color}{status}{RST}] {marker}[{code}] {YLW}{CUR}{description}{RST} {credits:.1} ECTS",
             marker = if color == GRN { STK } else { "" },
             code = self.code,
             credits = self.credits,
