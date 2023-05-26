@@ -56,6 +56,7 @@ struct Course {
 #[derive(Deserialize, Serialize)]
 #[serde(untagged)]
 pub(super) enum Grade {
+    Traditional(char),
     Completed(bool),
     Grade(u8),
     Ongoing,
@@ -335,7 +336,7 @@ impl Course {
         match self.grade {
             Grade::Ongoing => true,
             Grade::Completed(passed) => !passed,
-            Grade::Grade(_) => false,
+            Grade::Grade(_) | Grade::Traditional(_) => false,
         }
     }
 }

@@ -184,9 +184,12 @@ impl<'a> UI<'a> {
     /// Prompt the user for information regarding the creation of a new `Grade`
     /// object. Silently returns `Ok` on bad user input.
     fn construct_grade(&mut self) -> io::Result<Option<Grade>> {
-        self.prompt_line("Enter type [3] [4] [5] [p]ass [f]fail [o]ngoing")?;
+        self.prompt_line("Enter type [3..5] [A..E] [p]ass [f]ail [o]ngoing")?;
         self.key.read()?;
         match &self.key.as_printable_ascii() {
+            Some('A'..='E') => {
+                Ok(Some(Grade::Traditional(self.key.as_char_unchecked())))
+            }
             Some('3'..='5') => {
                 let grade: u8 = self.key.as_char_unchecked() as u8 - b'0';
                 Ok(Some(Grade::Grade(grade)))
