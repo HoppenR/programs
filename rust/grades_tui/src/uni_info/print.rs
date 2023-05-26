@@ -82,23 +82,23 @@ fn write_header(
 fn write_progress(f: &mut Formatter<'_>, courses: &Vec<&Course>, indents: usize) -> fmt::Result {
     let mut accrued_creds: f32 = 0.0;
     let mut total_creds: f32 = 0.0;
-    let mut total_grade_items: f32 = 0.0;
-    let mut grades: Vec<u8> = Vec::new();
+    let mut grades: Vec<f32> = Vec::new();
     for course in courses {
         total_creds += course.max_credits();
         accrued_creds += course.sum_credits();
         match course.grade {
             Grade::Completed(_) | Grade::Ongoing => {}
             Grade::Grade(grade) => match grade {
-                (3..=5) => {
-                    grades.push(grade);
-                    total_grade_items += 1.0;
-                }
+                (3..=5) => grades.push(f32::from(grade)),
+                _ => return Err(fmt::Error),
+            },
+            Grade::Traditional(grade) => match grade {
+                ('A'..='E') => grades.push(5.0 - (grade as u8 - b'A') as f32 * 0.5),
                 _ => return Err(fmt::Error),
             },
         }
     }
-    let average: f32 = f32::from(grades.iter().sum::<u8>()) / total_grade_items;
+    let average: f32 = grades.iter().sum::<f32>() / grades.len() as f32;
     write!(
         f,
         "{lead:width$}{avg_color}{average:.3}{RST}avg {BARS} \
@@ -117,7 +117,7 @@ impl Display for UniInfo {
         let mut period_courses: Vec<&Course> = Vec::new();
         write!(
             f,
-            "{BLD}{RED}Averages only include courses graded 3-5{RST}{ERASE_TO_DISP_END}\n\r",
+            "{BLD}{RED}Averages include gradings 3..5 and A..E (B=4.5, D=3.5){RST}{ERASE_TO_LINE_END}\n\r",
         )?;
         for (sem_ix, sem) in self.menu.iter().enumerate() {
             let cursor = Cursor {
@@ -192,6 +192,10 @@ impl Display for Course {
                 }
                 _ => Err(fmt::Error),
             },
+            Grade::Traditional(grade) => match grade {
+                ('A'..='E') => Ok((GRN, grade)),
+                _ => Err(fmt::Error),
+            },
             Grade::Ongoing => Ok((BLU, ELLIPSIS)),
         }?;
         write!(
@@ -219,6 +223,10 @@ impl Display for Moment {
                     let grade_ch: char = (grade + b'0') as char;
                     Ok((GRN, grade_ch))
                 }
+                _ => Err(fmt::Error),
+            },
+            Grade::Traditional(grade) => match grade {
+                ('A'..='E') => Ok((GRN, grade)),
                 _ => Err(fmt::Error),
             },
             Grade::Ongoing => Ok((RED, ' ')),
