@@ -8,8 +8,7 @@
 //!
 //! The design goal is to be fully error safe, and tries to always restore the
 //! terminal to a normal state whenever the `UI` object goes out of scope through
-//! the `Drop` trait. Which is why the `main_loop` function takes ownership of,
-//! and drops the object when it exits.
+//! the `Drop` trait.
 //!
 //! # Usage
 //!
@@ -18,6 +17,7 @@
 //! ```
 //! let ui = UI::new(&mut uni).unwrap();
 //! ui.main_loop().unwrap();
+//! drop(ui);
 //! println!("Normal terminal is back!");
 //! ```
 
@@ -77,10 +77,21 @@ impl<'a> UI<'a> {
         self.term.flush()
     }
 
-    /// Main loop. Takes ownership of the `UI` instance, effectively dropping it.
+    /// Main loop.
     /// Returns whether user wants to save data to file.
-    pub(super) fn main_loop(mut self) -> io::Result<bool> {
+    pub(super) fn main_loop(&mut self) -> io::Result<bool> {
         loop {
+            // Scroll cursor into view by changing offset
+            if self.uni.cursor_offset() < self.offset {
+                self.offset = self.uni.cursor_offset();
+            }
+            if let Ok(mut height) = self.term.height() {
+                height = height.saturating_sub(1); // total statistics take up one row
+                height = height.saturating_sub(1); // the keybinds take up one row
+                let new_min_offset = self.uni.cursor_offset().saturating_sub(height);
+                self.offset = usize::max(self.offset, new_min_offset);
+            }
+            // Print
             self.term.reset_cursor_pos()?;
             self.term.write_skip(self.uni, self.offset)?;
             self.show_keybinds()?;
@@ -187,9 +198,7 @@ impl<'a> UI<'a> {
         self.prompt_line("Enter type [3..5] [A..E] [p]ass [f]ail [o]ngoing")?;
         self.key.read()?;
         match &self.key.as_printable_ascii() {
-            Some('A'..='E') => {
-                Ok(Some(Grade::Traditional(self.key.as_char_unchecked())))
-            }
+            Some('A'..='E') => Ok(Some(Grade::Traditional(self.key.as_char_unchecked()))),
             Some('3'..='5') => {
                 let grade: u8 = self.key.as_char_unchecked() as u8 - b'0';
                 Ok(Some(Grade::Grade(grade)))

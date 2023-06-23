@@ -35,15 +35,6 @@ macro_rules! err_usage {
     };
 }
 
-// For 1.3.0:
-// TODO: [ ] Figure out if the cursor is off the screen
-//               - A `UniInfo::cursor_offset()` function that iterates through
-//                 all raw containers, using a cursor to keep track of its position
-//                 manually. Comparing to `UniInfo`s cursor to see when to return.
-//                 Should return amount of entries seen.
-//               - A way to see if `cursor_offset - term_height` is within
-//                 viewing distance of `ui.offset`. If not, scroll in that direction.
-
 /// Run the editing program, reading the file at command line arg 1.
 /// Creates the file it it does not exist.
 /// Saves the JSON data back to disk if no errors occur and the user confirms it.
@@ -64,10 +55,10 @@ fn main() -> io::Result<()> {
         file.write_all(b"[]")?;
         file.rewind()?;
     }
+
     let mut uni: UniInfo = serde_json::from_reader(BufReader::new(&file))?;
 
-    let ui = UI::new(&mut uni)?;
-    let should_save: bool = ui.main_loop()?;
+    let should_save: bool = UI::new(&mut uni)?.main_loop()?;
 
     if should_save {
         file.rewind()?;

@@ -83,22 +83,29 @@ fn write_progress(f: &mut Formatter<'_>, courses: &Vec<&Course>, indents: usize)
     let mut accrued_creds: f32 = 0.0;
     let mut total_creds: f32 = 0.0;
     let mut grades: Vec<f32> = Vec::new();
+    let mut total_grade_items: f32 = 0.0;
     for course in courses {
         total_creds += course.max_credits();
         accrued_creds += course.sum_credits();
         match course.grade {
             Grade::Completed(_) | Grade::Ongoing => {}
             Grade::Grade(grade) => match grade {
-                (3..=5) => grades.push(f32::from(grade)),
+                (3..=5) => {
+                    grades.push(f32::from(grade));
+                    total_grade_items += 1.0;
+                }
                 _ => return Err(fmt::Error),
             },
             Grade::Traditional(grade) => match grade {
-                ('A'..='E') => grades.push(5.0 - (grade as u8 - b'A') as f32 * 0.5),
+                ('A'..='E') => {
+                    grades.push(f32::from(grade as u8 - b'A').mul_add(-0.5, 5.0));
+                    total_grade_items += 1.0;
+                }
                 _ => return Err(fmt::Error),
             },
         }
     }
-    let average: f32 = grades.iter().sum::<f32>() / grades.len() as f32;
+    let average: f32 = grades.iter().sum::<f32>() / total_grade_items;
     write!(
         f,
         "{lead:width$}{avg_color}{average:.3}{RST}avg {BARS} \
