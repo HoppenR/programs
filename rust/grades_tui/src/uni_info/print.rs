@@ -159,7 +159,7 @@ impl Display for UniInfo {
                                     level: Level::Task,
                                     ..cursor
                                 };
-                                write_entry(f, &task, self.cursor == cursor, 4)?;
+                                write_entry(f, &task, self.cursor == cursor, 5)?;
                             }
                         }
                     }
