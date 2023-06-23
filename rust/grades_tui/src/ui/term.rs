@@ -223,6 +223,11 @@ impl Term<'_> {
         self.os.flush()
     }
 
+    pub(super) fn height(&mut self) -> io::Result<usize> {
+        self.update_size()?;
+        Ok(self.size.row.into())
+    }
+
     /// Resets the terminal to the terminal I/O interfaces settings in `termios`
     /// if it is currently in raw mode.
     fn set_old_termios(&mut self) -> io::Result<()> {

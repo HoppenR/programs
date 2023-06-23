@@ -99,6 +99,74 @@ impl UniInfo {
         self.cursor.up();
     }
 
+    pub(super) fn cursor_offset(&mut self) -> usize {
+        let mut i: usize = 0;
+
+        i += 1; // Warning text takes 1 line
+
+        for (sem_ix, semester) in self.menu.iter().enumerate() {
+            let cursor = Cursor {
+                semester: sem_ix,
+                level: Level::Semester,
+                ..Default::default()
+            };
+            if cursor == self.cursor {
+                return i;
+            }
+            i += 1;
+            for (period_ix, period) in semester.iter().enumerate() {
+                let cursor = Cursor {
+                    period: period_ix,
+                    level: Level::Period,
+                    ..cursor
+                };
+                if cursor == self.cursor {
+                    return i;
+                }
+                i += 1;
+                for (course_ix, course) in period.iter().enumerate() {
+                    let cursor = Cursor {
+                        course: course_ix,
+                        level: Level::Course,
+                        ..cursor
+                    };
+                    if cursor == self.cursor {
+                        return i;
+                    }
+                    i += 1;
+                    if !course.should_print_moments() {
+                        continue;
+                    }
+                    for (moment_ix, moment) in course.moments.iter().enumerate() {
+                        let cursor = Cursor {
+                            moment: moment_ix,
+                            level: Level::Moment,
+                            ..cursor
+                        };
+                        if cursor == self.cursor {
+                            return i;
+                        }
+                        i += 1;
+                        for task_ix in 0..moment.tasks.iter().len() {
+                            let cursor = Cursor {
+                                task: task_ix,
+                                level: Level::Task,
+                                ..cursor
+                            };
+                            if cursor == self.cursor {
+                                return i;
+                            }
+                            i += 1;
+                        }
+                    }
+                }
+                i += 1; // stats
+            }
+            i += 1; // stats
+        }
+        unreachable!();
+    }
+
     /// Indents the cursor depending on if there are any objects that should
     /// be printable on the indented cursor level.
     pub(super) fn cursor_enter(&mut self) {
