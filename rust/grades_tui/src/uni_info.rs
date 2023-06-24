@@ -73,6 +73,14 @@ struct Moment {
 }
 type Tasks = BTreeMap<String, bool>;
 
+enum Node<'a> {
+    Menu(&'a Menu),
+    Semester(&'a Semester),
+    Period(&'a Period),
+    Course(&'a Course),
+    Moment(&'a Moment),
+}
+
 /// A struct that represents university info, as well as data and bindings to
 /// navigate a menu of its data members.
 impl UniInfo {
@@ -99,71 +107,19 @@ impl UniInfo {
         self.cursor.up();
     }
 
+    /// Returns the row of the cursor on the screen
     pub(super) fn cursor_offset(&mut self) -> usize {
-        let mut i: usize = 0;
-
-        i += 1; // Warning text takes 1 line
-
-        for (sem_ix, semester) in self.menu.iter().enumerate() {
-            let cursor = Cursor {
-                semester: sem_ix,
-                level: Level::Semester,
-                ..Default::default()
-            };
-            if cursor == self.cursor {
-                return i;
-            }
-            i += 1;
-            for (period_ix, period) in semester.iter().enumerate() {
-                let cursor = Cursor {
-                    period: period_ix,
-                    level: Level::Period,
-                    ..cursor
-                };
-                if cursor == self.cursor {
-                    return i;
-                }
-                i += 1;
-                for (course_ix, course) in period.iter().enumerate() {
-                    let cursor = Cursor {
-                        course: course_ix,
-                        level: Level::Course,
-                        ..cursor
-                    };
-                    if cursor == self.cursor {
-                        return i;
-                    }
-                    i += 1;
-                    if !course.should_print_moments() {
-                        continue;
-                    }
-                    for (moment_ix, moment) in course.moments.iter().enumerate() {
-                        let cursor = Cursor {
-                            moment: moment_ix,
-                            level: Level::Moment,
-                            ..cursor
-                        };
-                        if cursor == self.cursor {
-                            return i;
-                        }
-                        i += 1;
-                        for task_ix in 0..moment.tasks.iter().len() {
-                            let cursor = Cursor {
-                                task: task_ix,
-                                level: Level::Task,
-                                ..cursor
-                            };
-                            if cursor == self.cursor {
-                                return i;
-                            }
-                            i += 1;
-                        }
-                    }
-                }
-                i += 1; // stats
-            }
-            i += 1; // stats
+        let mut offset: usize = 0;
+        offset += 1; // Instructions take up one line
+        if find_cursor_offset(
+            &Node::Menu(&self.menu),
+            &Cursor::default(),
+            &self.cursor,
+            &mut offset,
+        ) {
+            return offset;
         }
+
         unreachable!();
     }
 
@@ -407,4 +363,99 @@ impl Course {
             Grade::Grade(_) | Grade::Traditional(_) => false,
         }
     }
+}
+
+fn find_cursor_offset(
+    node: &Node,
+    findcursor: &Cursor,
+    cursor: &Cursor,
+    offset: &mut usize,
+) -> bool {
+    match node {
+        Node::Menu(menu) => {
+            for (sem_ix, semester) in menu.iter().enumerate() {
+                let findcursor = &Cursor {
+                    semester: sem_ix,
+                    level: Level::Semester,
+                    ..*findcursor
+                };
+                if cursor == findcursor {
+                    return true;
+                }
+                *offset += 1;
+                if find_cursor_offset(&Node::Semester(semester), findcursor, cursor, offset) {
+                    return true;
+                }
+                *offset += 1; // stats
+            }
+        }
+        Node::Semester(sem) => {
+            for (period_ix, period) in sem.iter().enumerate() {
+                let findcursor = &Cursor {
+                    period: period_ix,
+                    level: Level::Period,
+                    ..*findcursor
+                };
+                if cursor == findcursor {
+                    return true;
+                }
+                *offset += 1;
+                if find_cursor_offset(&Node::Period(period), findcursor, cursor, offset) {
+                    return true;
+                }
+                *offset += 1; // stats
+            }
+        }
+        Node::Period(period) => {
+            for (course_ix, course) in period.iter().enumerate() {
+                let findcursor = &Cursor {
+                    course: course_ix,
+                    level: Level::Course,
+                    ..*findcursor
+                };
+                if cursor == findcursor {
+                    return true;
+                }
+                *offset += 1;
+                if find_cursor_offset(&Node::Course(course), findcursor, cursor, offset) {
+                    return true;
+                }
+            }
+        }
+        Node::Course(course) => {
+            if !course.should_print_moments() {
+                return false;
+            }
+            for (moment_ix, moment) in course.moments.iter().enumerate() {
+                let findcursor = &Cursor {
+                    moment: moment_ix,
+                    level: Level::Moment,
+                    ..*findcursor
+                };
+                if cursor == findcursor {
+                    return true;
+                }
+                *offset += 1;
+                if find_cursor_offset(&Node::Moment(moment), findcursor, cursor, offset) {
+                    return true;
+                }
+            }
+        }
+        Node::Moment(moment) => {
+            if let Some(tasks) = &moment.tasks {
+                for task_ix in 0..tasks.len() {
+                    let findcursor = &Cursor {
+                        task: task_ix,
+                        level: Level::Task,
+                        ..*findcursor
+                    };
+                    *offset += 1;
+                    if cursor == findcursor {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    false
 }
