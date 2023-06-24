@@ -10,14 +10,13 @@
     clippy::complexity,
     clippy::correctness,
     //clippy::deprecated,
-    clippy::nursery,
+    //clippy::nursery,
     clippy::pedantic,
     clippy::perf,
     //clippy::restriction,
     clippy::style,
     clippy::suspicious,
 )]
-#![allow(clippy::redundant_pub_crate)]
 // }}}
 
 mod ui;

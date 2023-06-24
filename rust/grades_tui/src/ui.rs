@@ -217,16 +217,52 @@ impl<'a> UI<'a> {
         match &self.uni.cursor_level() {
             Level::Semester | Level::Period => {}
             Level::Course => {
-                if let Some(grade) = self.construct_grade()? {
-                    self.uni.set_course_grade(grade);
+                self.prompt_line("Edit [g]rade [c]ode [n]ame")?;
+                self.key.read()?;
+                match &self.key.as_printable_ascii() {
+                    Some('g') => {
+                        if let Some(grade) = self.construct_grade()? {
+                            self.uni.set_course_grade(grade);
+                        }
+                    }
+                    Some('c') => {
+                        self.prompt_line("Enter code: ")?;
+                        let code: String = self.read_line()?;
+                        self.uni.set_course_code(code);
+                    }
+                    Some('n') => {
+                        self.prompt_line("Enter name: ")?;
+                        let name: String = self.read_line()?;
+                        self.uni.set_course_name(name);
+                    }
+                    _ => {}
                 }
             }
             Level::Moment => {
-                if let Some(grade) = self.construct_grade()? {
-                    self.uni.set_moment_grade(grade);
+                self.prompt_line("Edit [g]rade [c]ode [n]ame")?;
+                self.key.read()?;
+                match &self.key.as_printable_ascii() {
+                    Some('g') => {
+                        if let Some(grade) = self.construct_grade()? {
+                            self.uni.set_moment_grade(grade);
+                        }
+                    }
+                    Some('c') => {
+                        self.prompt_line("Enter code: ")?;
+                        let code: String = self.read_line()?;
+                        self.uni.set_moment_code(code);
+                    }
+                    Some('n') => {
+                        self.prompt_line("Enter description: ")?;
+                        let description: String = self.read_line()?;
+                        self.uni.set_moment_description(description);
+                    }
+                    _ => {}
                 }
             }
-            Level::Task => self.uni.toggle_selected_task(),
+            Level::Task => {
+                self.uni.toggle_selected_task();
+            }
         };
         Ok(())
     }
