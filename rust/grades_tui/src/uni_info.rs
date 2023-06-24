@@ -73,6 +73,7 @@ struct Moment {
 }
 type Tasks = BTreeMap<String, bool>;
 
+/// Helper struct for iterating through data in `UniInfo` as nodes
 enum Node<'a> {
     Menu(&'a Menu),
     Semester(&'a Semester),
@@ -111,16 +112,13 @@ impl UniInfo {
     pub(super) fn cursor_offset(&mut self) -> usize {
         let mut offset: usize = 0;
         offset += 1; // Instructions take up one line
-        if find_cursor_offset(
+        find_cursor_offset(
             &Node::Menu(&self.menu),
             &Cursor::default(),
             &self.cursor,
             &mut offset,
-        ) {
-            return offset;
-        }
-
-        unreachable!();
+        );
+        offset
     }
 
     /// Indents the cursor depending on if there are any objects that should
@@ -247,6 +245,34 @@ impl UniInfo {
     pub(super) fn set_moment_grade(&mut self, new_grade: Grade) {
         if let Some(moment) = self.sel_moment_mut() {
             moment.grade = new_grade;
+        }
+    }
+
+    /// Sets the `code` of the currently targeted `Course` to `new_code`.
+    pub(super) fn set_course_code(&mut self, new_code: String) {
+        if let Some(course) = self.sel_course_mut() {
+            course.code = new_code;
+        }
+    }
+
+    /// Sets the `code` of the currently targeted `Moment` to `new_code`.
+    pub(super) fn set_moment_code(&mut self, new_code: String) {
+        if let Some(moment) = self.sel_moment_mut() {
+            moment.code = new_code;
+        }
+    }
+
+    /// Sets the `name` of the currently targeted `Course` to `new_name`
+    pub(super) fn set_course_name(&mut self, new_name: String) {
+        if let Some(course) = self.sel_course_mut() {
+            course.name = new_name;
+        }
+    }
+
+    /// Sets the `description` of the currently targeted `Moment` to `new_description`
+    pub(super) fn set_moment_description(&mut self, new_description: String) {
+        if let Some(moment) = self.sel_moment_mut() {
+            moment.description = new_description;
         }
     }
 
