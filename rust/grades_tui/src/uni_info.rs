@@ -367,18 +367,17 @@ impl UniInfo {
 impl Course {
     /// Sums the accrued credits.
     fn sum_credits(&self) -> f32 {
-        return self
-            .moments
+        self.moments
             .iter()
             .filter_map(|v| {
                 (!matches!(v.grade, Grade::Ongoing | Grade::Completed(false))).then_some(v.credits)
             })
-            .sum();
+            .sum()
     }
 
     /// Sums the maximum posssible.
     fn max_credits(&self) -> f32 {
-        return self.moments.iter().map(|v| v.credits).sum();
+        self.moments.iter().map(|v| v.credits).sum()
     }
 
     /// Returns whether the child moments should be visible on screen.
