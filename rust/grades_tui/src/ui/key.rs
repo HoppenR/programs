@@ -80,21 +80,23 @@ impl Key<'_> {
     pub(super) fn read(&mut self) -> io::Result<()> {
         self.rd = self.is.read(&mut self.data[..])?;
         if self.rd == 0 {
-            return Err(io::Error::new(
+            Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid input, 0 bytes read",
-            ));
+            ))
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     /// Returns an optional character if the last keypress is representable
     /// as a printable ascii-character.
     pub(super) const fn as_printable_ascii(&self) -> Option<char> {
         if self.rd == 1 && matches!(self.data[0], b' '..=b'~') {
-            return Some(self.data[0] as char);
+            Some(self.data[0] as char)
+        } else {
+            None
         }
-        None
     }
 
     /// Returns an optional character if the last keypress is representable
